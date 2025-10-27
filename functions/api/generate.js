@@ -1,25 +1,35 @@
 // functions/api/generate.js
+// Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages';
 
-// onRequestPost の引数を { request, env } に修正し、
-// APIキーを env.GEMINI_API_KEY から取得します。
-export async function onRequestPost({ request, env }) { // 修正ポイント: envを追加
+/**
+ * 画像生成リクエストを処理する Cloudflare Pages Functionsのエントリポイント
+ * @param {object} context - Cloudflare Functionsのコンテキスト。request, envなどを含む。
+ * @returns {Response} - 生成された画像データを含むJSONレスポンス
+ */
+export async function onRequestPost({ request, env }) { 
     try {
+        // リクエストボディからプロンプトを取得
         const { prompt } = await request.json();
 
-        if (!prompt) {
-            return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), { status: 400 });
-        }
-
-        // 修正ポイント: envオブジェクトから環境変数を取得
+        // Cloudflare環境変数からAPIキーを取得
+        // ここが修正されたポイントです。envオブジェクトを使用します。
         const API_KEY = env.GEMINI_API_KEY; 
 
-        if (!API_KEY) {
-            return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), { status: 500 });
+        if (!prompt) {
+            return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
-        // (中略) ペイロードとAPI呼び出しのロジックは変更なし
+        if (!API_KEY) {
+            return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), { 
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
 
         // Gemini APIへのリクエストペイロード
         const payload = {
@@ -28,7 +38,7 @@ export async function onRequestPost({ request, env }) { // 修正ポイント: e
                 // 画像生成の設定 (必要に応じて変更してください)
                 number_of_images: 1,
                 output_mime_type: "image/jpeg",
-                aspect_ratio: "1:1", // 1:1, 4:3, 3:4, 16:9, 9:16など
+                aspect_ratio: "1:1",
             },
         };
 
@@ -43,14 +53,15 @@ export async function onRequestPost({ request, env }) { // 修正ポイント: e
 
         const geminiResult = await geminiResponse.json();
 
-        // (中略) 応答処理のロジックは変更なし
-
         if (!geminiResponse.ok || geminiResult.error) {
             console.error('Gemini APIエラー:', geminiResult.error);
             return new Response(JSON.stringify({ 
                 error: '画像生成リクエストがGemini API側で失敗しました。', 
                 details: geminiResult.error?.message 
-            }), { status: 500 });
+            }), { 
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
         // 成功した場合、Base64エンコードされた画像データを抽出
@@ -64,10 +75,16 @@ export async function onRequestPost({ request, env }) { // 修正ポイント: e
             });
         }
 
-        return new Response(JSON.stringify({ error: '画像データが取得できませんでした。' }), { status: 500 });
+        return new Response(JSON.stringify({ error: '画像データが取得できませんでした。' }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
 
     } catch (error) {
         console.error('サーバーレス関数エラー:', error);
-        return new Response(JSON.stringify({ error: '予期せぬ内部エラーが発生しました。' }), { status: 500 });
+        return new Response(JSON.stringify({ error: '予期せぬ内部エラーが発生しました。' }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
