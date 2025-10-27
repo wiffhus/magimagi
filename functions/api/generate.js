@@ -6,8 +6,8 @@
  */
 export async function onRequestPost({ request, env }) { 
     try {
-        // リクエストボディからプロンプトとseedを取得
-        const { prompt, seed } = await request.json();
+        // リクエストボディからプロンプトを取得
+        const { prompt } = await request.json();
         const API_KEY = env.GEMINI_API_KEY; 
 
         if (!prompt) {
@@ -28,10 +28,10 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // 正しいImagen 3.0のエンドポイント（Vertex AI形式）
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
+        // 正しいImagen 3.0のエンドポイント
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
         
-        // Imagen API の正しいペイロード形式（Vertex AI predict形式）
+        // Imagen API の正しいペイロード形式
         const payload = {
             instances: [
                 {
@@ -39,9 +39,7 @@ export async function onRequestPost({ request, env }) {
                 }
             ],
             parameters: {
-                sampleCount: 1,
-                seed: seed || Math.floor(Math.random() * 2147483647),
-                addWatermark: false
+                sampleCount: 1
             }
         };
 
@@ -49,7 +47,6 @@ export async function onRequestPost({ request, env }) {
         const geminiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: {
-                'x-goog-api-key': API_KEY,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
@@ -57,18 +54,13 @@ export async function onRequestPost({ request, env }) {
 
         const responseText = await geminiResponse.text();
         
-        // デバッグ用：レスポンスをログ出力
-        console.log('Status:', geminiResponse.status);
-        console.log('Response:', responseText);
-        
         let geminiResult;
         try {
             geminiResult = JSON.parse(responseText);
         } catch (e) {
             return new Response(JSON.stringify({ 
                 error: 'APIからの応答が不正なJSON形式です。',
-                responseText: responseText.substring(0, 500),
-                status: geminiResponse.status
+                responseText: responseText.substring(0, 500)
             }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
@@ -78,16 +70,14 @@ export async function onRequestPost({ request, env }) {
         if (!geminiResponse.ok || geminiResult.error) {
             return new Response(JSON.stringify({ 
                 error: '画像生成リクエストが失敗しました。',
-                geminiError: geminiResult.error || geminiResult,
-                status: geminiResponse.status,
-                fullResponse: geminiResult
+                geminiError: geminiResult.error
             }), { 
                 status: geminiResponse.status,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
-        // Imagen API のレスポンスから画像を抽出（Vertex AI predict形式）
+        // Imagen API のレスポンスから画像を抽出
         const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded;
 
         if (base64Image) {
