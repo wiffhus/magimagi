@@ -712,19 +712,25 @@
             return Math.floor(Math.random() * 2147483647); // Max int32
         }
 
-        function addToHistory(prompt, base64Image, seed) {
+        // [修正] 引数を base64Image から thumbnailUrl に変更
+        function addToHistory(prompt, thumbnailUrl, seed) {
             const historyItem = {
                 id: Date.now(),
                 prompt: prompt,
                 seed: seed,
                 timestamp: new Date().toISOString(),
-                thumbnail: `data:image/png;base64,${base64Image}`
+                thumbnail: thumbnailUrl // [修正] Base64 の代わりに URL を保存
             };
 
             history.unshift(historyItem); // Add to beginning
             if (history.length > 50) history = history.slice(0, 50); // Keep last 50
 
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            try {
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            } catch (e) {
+                console.error("Failed to save history:", e);
+                // 容量超過などで失敗した場合、古い履歴を削除してリトライするなどの処理も可能
+            }
             renderHistory();
         }
 
@@ -738,7 +744,7 @@
 
             historyList.innerHTML = history.map(item => `
                 <div class="history-item" data-id="${item.id}">
-                    <img src="${item.thumbnail}" class="history-thumbnail" alt="Generated">
+                    <img src="${item.thumbnail}" class="history-thumbnail" alt="Generated" loading="lazy">
                     <div class="history-prompt">${escapeHtml(item.prompt)}</div>
                     <div class="history-meta">
                         <span>Seed: ${item.seed}</span>
@@ -847,7 +853,7 @@
                     },
                     body: JSON.stringify({ 
                         prompt: prompt,
-                        seed: currentSeed
+                        seed: currentSeed // API が seed をサポートしていなくても送信だけ行う
                     }),
                 });
 
@@ -870,13 +876,13 @@
                 document.getElementById('seedValue').textContent = currentSeed;
                 seedDisplay.classList.add('active');
 
-                // Add to history
-                addToHistory(prompt, data.base64Image, currentSeed);
+                // [削除] addToHistory の呼び出しを削除 (saveToGoogleDrive に移動)
 
                 // Increment counter after successful generation
                 incrementGenerationCount();
 
                 // Save to Google Drive via Cloudflare proxy
+                // [修正] この関数が成功時に addToHistory を呼び出す
                 saveToGoogleDrive(prompt, data.base64Image, currentSeed);
 
             } catch (err) {
@@ -888,6 +894,7 @@
             }
         }
 
+        // [修正] 保存成功時に addToHistory を呼び出すように変更
         async function saveToGoogleDrive(prompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
@@ -918,7 +925,8 @@
 
                 const result = await response.json();
 
-                if (result.success) {
+                // [修正] thumbnailUrl が返ってくることを期待する
+                if (result.success && result.thumbnailUrl) {
                     saveStatus.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -926,8 +934,12 @@
                         Saved to Google Drive
                     `;
                     saveStatus.className = 'save-status success';
+
+                    // [修正] ここで履歴を追加する (Base64 の代わりに URL を使用)
+                    addToHistory(prompt, result.thumbnailUrl, seed);
+
                 } else {
-                    throw new Error(result.error || 'Save failed');
+                    throw new Error(result.error || 'Save failed or thumbnailUrl missing');
                 }
 
             } catch (err) {
