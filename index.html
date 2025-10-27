@@ -369,6 +369,198 @@
             color: #999;
         }
 
+        .main-layout {
+            display: flex;
+            gap: 0;
+            height: calc(100vh - 40px);
+        }
+
+        .history-panel {
+            width: 280px;
+            background: #f8f8f8;
+            border-right: 1px solid #d0d0d0;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .history-header {
+            background: #e8e8e8;
+            border-bottom: 1px solid #d0d0d0;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-header svg {
+            width: 16px;
+            height: 16px;
+            stroke: #666;
+        }
+
+        .history-list {
+            padding: 8px;
+        }
+
+        .history-item {
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: #0066cc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-item.active {
+            border-color: #0066cc;
+            background: #e8f4ff;
+        }
+
+        .history-thumbnail {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 3px;
+            background: #f0f0f0;
+            margin-bottom: 8px;
+        }
+
+        .history-prompt {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            max-height: 32px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .history-meta {
+            font-size: 10px;
+            color: #999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .history-btn {
+            flex: 1;
+            padding: 4px 8px;
+            font-size: 10px;
+            background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
+            border: 1px solid #b0b0b0;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .history-btn:hover {
+            background: linear-gradient(180deg, #f8f8f8 0%, #d8d8d8 100%);
+        }
+
+        .history-btn svg {
+            width: 10px;
+            height: 10px;
+        }
+
+        .history-empty {
+            padding: 40px 16px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .seed-display {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .seed-display.active {
+            display: flex;
+        }
+
+        .seed-value {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .seed-copy-btn {
+            padding: 2px 8px;
+            font-size: 10px;
+            background: #ffffff;
+            border: 1px solid #b0b0b0;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .seed-copy-btn:hover {
+            background: #f0f0f0;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .history-panel {
+                width: 100%;
+                max-height: 300px;
+                border-right: none;
+                border-bottom: 1px solid #d0d0d0;
+            }
+
+            .history-list {
+                display: flex;
+                overflow-x: auto;
+                padding: 8px;
+            }
+
+            .history-item {
+                min-width: 160px;
+                margin-right: 8px;
+                margin-bottom: 0;
+            }
+        }
+
         @media (max-width: 600px) {
             .content {
                 padding: 16px;
@@ -397,67 +589,90 @@
             <h1>magi2</h1>
         </div>
 
-        <div class="content">
-            <div class="input-group">
-                <label for="prompt">Prompt</label>
-                <textarea id="prompt" placeholder="Describe the image you want to generate..."></textarea>
-            </div>
-
-            <div class="button-group">
-                <button id="generateBtn" class="primary" onclick="generateImage()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
+        <div class="main-layout">
+            <!-- History Panel -->
+            <div class="history-panel">
+                <div class="history-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
-                    Generate
-                </button>
+                    History
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="history-empty">No images generated yet</div>
+                </div>
             </div>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <div class="loading-text">Generating image...</div>
-            </div>
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="content">
+                    <div class="input-group">
+                        <label for="prompt">Prompt</label>
+                        <textarea id="prompt" placeholder="Describe the image you want to generate..."></textarea>
+                    </div>
 
-            <div class="error" id="error">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span id="errorText"></span>
-            </div>
-
-            <div class="result" id="result">
-                <div class="image-container">
-                    <div class="image-header">
-                        <span class="image-title">Generated Image</span>
-                        <button class="close-button" onclick="closeImage()" title="Close">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                    <div class="button-group">
+                        <button id="generateBtn" class="primary" onclick="generateImage()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
+                            Generate
                         </button>
                     </div>
-                    <img id="generatedImage" alt="Generated Image">
-                </div>
-                <div class="save-status" id="saveStatus"></div>
-            </div>
 
-            <div class="stats">
-                <div class="stat-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    <span class="stat-label">Total Generations:</span>
-                    <span class="stat-value" id="totalCount">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Cost:</span>
-                    <div class="cost-info">
-                        <span class="cost-primary" id="totalCostUSD">$0.00</span>
-                        <span class="cost-secondary" id="totalCostJPY">(¥0)</span>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Generating image...</div>
+                    </div>
+
+                    <div class="error" id="error">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <div class="result" id="result">
+                        <div class="image-container">
+                            <div class="image-header">
+                                <span class="image-title">Generated Image</span>
+                                <button class="close-button" onclick="closeImage()" title="Close">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <img id="generatedImage" alt="Generated Image">
+                        </div>
+                        <div class="seed-display" id="seedDisplay">
+                            <span>Seed: <span class="seed-value" id="seedValue">-</span></span>
+                            <button class="seed-copy-btn" onclick="copySeed()">Copy</button>
+                        </div>
+                        <div class="save-status" id="saveStatus"></div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            <span class="stat-label">Total Generations:</span>
+                            <span class="stat-value" id="totalCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Cost:</span>
+                            <div class="cost-info">
+                                <span class="cost-primary" id="totalCostUSD">$0.00</span>
+                                <span class="cost-secondary" id="totalCostJPY">(¥0)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -469,12 +684,16 @@
         const COST_PER_GENERATION = 0.04; // USD
         const USD_TO_JPY = 150; // Exchange rate (adjust as needed)
         const STORAGE_KEY = 'magi2_generation_count';
+        const HISTORY_KEY = 'magi2_history';
 
         // Load generation count from localStorage
         let generationCount = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        let currentSeed = null;
 
         // Update display on page load
         updateStats();
+        renderHistory();
 
         function updateStats() {
             const totalCostUSD = (generationCount * COST_PER_GENERATION).toFixed(2);
@@ -491,7 +710,108 @@
             updateStats();
         }
 
-        async function generateImage() {
+        function generateRandomSeed() {
+            return Math.floor(Math.random() * 2147483647); // Max int32
+        }
+
+        function addToHistory(prompt, base64Image, seed) {
+            const historyItem = {
+                id: Date.now(),
+                prompt: prompt,
+                seed: seed,
+                timestamp: new Date().toISOString(),
+                thumbnail: `data:image/png;base64,${base64Image}`
+            };
+
+            history.unshift(historyItem); // Add to beginning
+            if (history.length > 50) history = history.slice(0, 50); // Keep last 50
+
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">No images generated yet</div>';
+                return;
+            }
+
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item" data-id="${item.id}">
+                    <img src="${item.thumbnail}" class="history-thumbnail" alt="Generated">
+                    <div class="history-prompt">${escapeHtml(item.prompt)}</div>
+                    <div class="history-meta">
+                        <span>Seed: ${item.seed}</span>
+                        <span>${formatDate(item.timestamp)}</span>
+                    </div>
+                    <div class="history-actions">
+                        <button class="history-btn" onclick="regenerateFromHistory(${item.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Regen
+                        </button>
+                        <button class="history-btn" onclick="variationFromHistory(${item.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                            Vary
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+            return `${Math.floor(diffMins / 1440)}d ago`;
+        }
+
+        function regenerateFromHistory(id) {
+            const item = history.find(h => h.id === id);
+            if (!item) return;
+
+            document.getElementById('prompt').value = item.prompt;
+            generateImage(item.seed); // Use same seed
+        }
+
+        function variationFromHistory(id) {
+            const item = history.find(h => h.id === id);
+            if (!item) return;
+
+            document.getElementById('prompt').value = item.prompt;
+            generateImage(); // Generate with new random seed
+        }
+
+        function copySeed() {
+            if (!currentSeed) return;
+            navigator.clipboard.writeText(currentSeed.toString()).then(() => {
+                const btn = document.querySelector('.seed-copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = originalText, 1500);
+            });
+        }
+
+        async function generateImage(seedOverride = null) {
             const prompt = document.getElementById('prompt').value.trim();
             const generateBtn = document.getElementById('generateBtn');
             const loading = document.getElementById('loading');
@@ -499,17 +819,22 @@
             const errorText = document.getElementById('errorText');
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
+            const seedDisplay = document.getElementById('seedDisplay');
 
             // Reset
             error.classList.remove('active');
             result.classList.remove('active');
             saveStatus.className = 'save-status';
+            seedDisplay.classList.remove('active');
 
             if (!prompt) {
                 errorText.textContent = 'Please enter a prompt.';
                 error.classList.add('active');
                 return;
             }
+
+            // Generate or use provided seed
+            currentSeed = seedOverride !== null ? seedOverride : generateRandomSeed();
 
             // UI update
             generateBtn.disabled = true;
@@ -522,7 +847,10 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ prompt }),
+                    body: JSON.stringify({ 
+                        prompt: prompt,
+                        seed: currentSeed
+                    }),
                 });
 
                 const data = await response.json();
@@ -536,11 +864,18 @@
                 img.src = `data:image/png;base64,${data.base64Image}`;
                 result.classList.add('active');
 
+                // Display seed
+                document.getElementById('seedValue').textContent = currentSeed;
+                seedDisplay.classList.add('active');
+
+                // Add to history
+                addToHistory(prompt, data.base64Image, currentSeed);
+
                 // Increment counter after successful generation
                 incrementGenerationCount();
 
                 // Save to Google Drive via Cloudflare proxy
-                saveToGoogleDrive(prompt, data.base64Image);
+                saveToGoogleDrive(prompt, data.base64Image, currentSeed);
 
             } catch (err) {
                 errorText.textContent = err.message;
@@ -551,7 +886,7 @@
             }
         }
 
-        async function saveToGoogleDrive(prompt, base64Image) {
+        async function saveToGoogleDrive(prompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
             try {
@@ -574,6 +909,7 @@
                     body: JSON.stringify({
                         prompt: prompt,
                         base64Image: base64Image,
+                        seed: seed,
                         timestamp: new Date().toISOString()
                     }),
                 });
@@ -608,8 +944,10 @@
         function closeImage() {
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
+            const seedDisplay = document.getElementById('seedDisplay');
             result.classList.remove('active');
             saveStatus.className = 'save-status';
+            seedDisplay.classList.remove('active');
         }
 
         // Enter to generate (Shift+Enter for new line)
