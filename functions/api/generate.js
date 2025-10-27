@@ -40,9 +40,8 @@ export async function onRequestPost({ request, env }) {
             ],
             parameters: {
                 sampleCount: 1,
-                seed: seed, // [修正] seed を指定
-                addWatermark: false, // [修正] seed を有効にするため false に設定
-                enablePromptRewriting: false // [修正] seed を有効にするため false に設定
+                seed: seed // [修正] seed のみ指定します
+                // addWatermark と enablePromptRewriting を削除
             }
         };
 
