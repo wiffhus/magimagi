@@ -1,5 +1,5 @@
 // functions/api/generate.js
-// Cloudflare Pages Functions for Imagen API
+// Cloudflare Pages Functions for Imagen API (v1alpha)
 
 /**
  * 画像生成リクエストを処理する Cloudflare Pages Functionsのエントリポイント
@@ -28,8 +28,8 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // Imagen API の正しいエンドポイント
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate:predict?key=${API_KEY}`;
+        // Imagen API v1alpha の正しいエンドポイント
+        const apiUrl = `https://generativelanguage.googleapis.com/v1alpha/models/imagen-3.0-generate-001:predict?key=${API_KEY}`;
         
         // Imagen API の正しいペイロード形式
         const payload = {
@@ -43,7 +43,7 @@ export async function onRequestPost({ request, env }) {
             }
         };
 
-        console.log('Requesting Imagen API...');
+        console.log('Requesting Imagen API (v1alpha)...');
 
         // Imagen APIを呼び出す
         const geminiResponse = await fetch(apiUrl, {
