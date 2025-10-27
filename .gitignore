@@ -1,0 +1,11 @@
+# 依存関係
+node_modules
+/package-lock.json
+
+# 環境ファイル
+.env
+.env.local
+
+# ビルド/一時フォルダ (もし将来的に追加した場合)
+/dist
+/build
