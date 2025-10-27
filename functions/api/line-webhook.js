@@ -1,29 +1,29 @@
 // functions/api/line-webhook.js
-// エラー詳細をLINEに返すデバッグ版
+// タイムアウト対策版
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict';
 
 export async function onRequestPost({ request, env }) {
-    console.log('=== Webhook受信 ===');
-    
     try {
         const body = await request.json();
         const events = body.events || [];
         
+        // イベント処理は待たずに即座に200を返す
         for (const event of events) {
             if (event.type === 'message' && event.message.type === 'text') {
-                await handleTextMessage(event, env);
+                // 非同期で処理（await しない）
+                handleTextMessage(event, env).catch(err => {
+                    console.error('処理エラー:', err);
+                });
             }
         }
         
+        // すぐに200を返してWebhookを閉じる
         return new Response('OK', { status: 200 });
         
     } catch (error) {
-        console.error('Webhook処理エラー:', error);
-        return new Response(JSON.stringify({ error: error.message }), { 
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        console.error('Webhook Error:', error);
+        return new Response('Error', { status: 500 });
     }
 }
 
@@ -32,212 +32,211 @@ async function handleTextMessage(event, env) {
     const userId = event.source.userId;
     const replyToken = event.replyToken;
     
-    // 環境変数チェック
-    if (userMessage === 'チェック' || userMessage === 'check') {
-        const status = `
-🔍 環境変数チェック
-
-GEMINI_API_KEY: ${env.GEMINI_API_KEY ? '✅ 設定済み' : '❌ 未設定'}
-LINE_CHANNEL_ACCESS_TOKEN: ${env.LINE_CHANNEL_ACCESS_TOKEN ? '✅ 設定済み' : '❌ 未設定'}
-GOOGLE_DRIVE_GAS_URL: ${env.GOOGLE_DRIVE_GAS_URL ? '✅ 設定済み' : '❌ 未設定'}
-
-GAS URL: ${env.GOOGLE_DRIVE_GAS_URL ? env.GOOGLE_DRIVE_GAS_URL.substring(0, 50) + '...' : 'なし'}
-        `.trim();
-        
-        await sendReply(replyToken, { type: 'text', text: status }, env);
-        return;
-    }
-    
-    if (userMessage === 'テスト' || userMessage === 'test') {
+    // === チェックコマンド ===
+    if (userMessage === 'チェック') {
         await sendReply(replyToken, {
             type: 'text',
-            text: '✅ 接続OK！\n\n「チェック」と送信すると環境変数を確認できます。'
+            text: `環境変数チェック:\n\nGEMINI: ${env.GEMINI_API_KEY ? 'OK' : 'NG'}\nLINE: ${env.LINE_CHANNEL_ACCESS_TOKEN ? 'OK' : 'NG'}\nGAS: ${env.GOOGLE_DRIVE_GAS_URL ? 'OK' : 'NG'}\n\nURL: ${env.GOOGLE_DRIVE_GAS_URL || 'なし'}`
         }, env);
         return;
     }
     
-    // 画像生成
-    await generateAndSendImage(userMessage, event, env);
-}
-
-async function generateAndSendImage(prompt, event, env) {
-    const replyToken = event.replyToken;
-    const userId = event.source.userId;
+    // === GASテストコマンド ===
+    if (userMessage === 'GASテスト') {
+        await sendReply(replyToken, {
+            type: 'text',
+            text: 'GASに接続中...'
+        }, env);
+        
+        try {
+            const response = await fetch(env.GOOGLE_DRIVE_GAS_URL);
+            const result = await response.json();
+            
+            await pushMessage(userId, {
+                type: 'text',
+                text: `✅ GAS接続成功！\n\nステータス: ${result.status}`
+            }, env);
+        } catch (error) {
+            await pushMessage(userId, {
+                type: 'text',
+                text: `❌ GAS接続失敗\n\n${error.message}`
+            }, env);
+        }
+        return;
+    }
     
-    let errorDetails = '';
+    // === ダミーテストコマンド ===
+    if (userMessage === 'ダミーテスト') {
+        await sendReply(replyToken, {
+            type: 'text',
+            text: 'ダミー画像アップロード中...'
+        }, env);
+        
+        const DUMMY = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwABmQA//Z";
+        
+        try {
+            const result = await uploadToGoogleDrive(DUMMY, 'dummy', env);
+            
+            await pushMessage(userId, {
+                type: 'text',
+                text: result.success ? `✅ 成功！\n\nGoogle Driveを確認！` : `❌ 失敗\n\n${JSON.stringify(result)}`
+            }, env);
+        } catch (error) {
+            await pushMessage(userId, {
+                type: 'text',
+                text: `❌ エラー\n\n${error.message}`
+            }, env);
+        }
+        return;
+    }
+    
+    // === 画像生成 ===
+    // すぐに返信（Reply API使用）
+    await sendReply(replyToken, {
+        type: 'text',
+        text: `🎨 「${userMessage}」\n生成開始します...`
+    }, env);
     
     try {
-        await sendReply(replyToken, {
-            type: 'text',
-            text: `🎨 「${prompt}」を生成中...\n⏱ 約10秒お待ちください`
-        }, env);
+        console.log('=== 画像生成開始 ===');
+        console.time('total');
         
         // ステップ1: 画像生成
-        console.log('ステップ1: 画像生成開始');
-        const base64Image = await generateImage(prompt, env);
+        console.time('imagen');
+        const base64Image = await generateImage(userMessage, env);
+        console.timeEnd('imagen');
         
         if (!base64Image) {
-            errorDetails = 'ステップ1で失敗: Imagen APIから画像が返ってこない';
             throw new Error('画像生成失敗');
         }
         
-        console.log('ステップ1: 成功（画像サイズ:', base64Image.length, '文字）');
+        console.log('画像サイズ:', base64Image.length);
         
-        // ステップ2: Google Driveにアップロード
-        console.log('ステップ2: Driveアップロード開始');
-        console.log('GAS URL:', env.GOOGLE_DRIVE_GAS_URL);
-        
-        if (!env.GOOGLE_DRIVE_GAS_URL) {
-            errorDetails = 'ステップ2で失敗: GOOGLE_DRIVE_GAS_URLが設定されていません';
-            throw new Error('GAS URL未設定');
-        }
-        
-        const driveResult = await uploadToGoogleDrive(base64Image, prompt, env);
-        
-        console.log('ステップ2: 結果=', JSON.stringify(driveResult));
+        // ステップ2: Driveアップロード
+        console.time('drive');
+        const driveResult = await uploadToGoogleDrive(base64Image, userMessage, env);
+        console.timeEnd('drive');
         
         if (!driveResult.success) {
-            errorDetails = `ステップ2で失敗: ${JSON.stringify(driveResult)}`;
-            throw new Error('Driveアップロード失敗');
+            throw new Error(`Drive失敗: ${driveResult.error}`);
         }
         
-        console.log('ステップ2: 成功');
+        console.log('Drive URL:', driveResult.publicUrl);
         
-        // ステップ3: LINEに画像送信
-        console.log('ステップ3: LINE送信開始');
-        console.log('画像URL:', driveResult.publicUrl);
-        
+        // ステップ3: 画像送信
+        console.time('line-push');
         await pushMessage(userId, {
             type: 'image',
             originalContentUrl: driveResult.publicUrl,
             previewImageUrl: driveResult.thumbnailUrl || driveResult.publicUrl
         }, env);
+        console.timeEnd('line-push');
         
-        console.log('ステップ3: 成功');
-        
+        // 完了通知
         await pushMessage(userId, {
             type: 'text',
-            text: '✅ 生成完了！\nコスト: $0.04 (¥6)'
+            text: '✅ 完了！コスト: $0.04'
         }, env);
         
-    } catch (error) {
-        console.error('エラー:', error);
+        console.timeEnd('total');
+        console.log('=== 処理完了 ===');
         
-        // 詳細なエラーメッセージをLINEに送信
-        const errorMessage = `
-❌ エラーが発生しました
-
-エラー: ${error.message}
-
-詳細: ${errorDetails || 'なし'}
-
-【確認事項】
-1. 環境変数が設定されているか
-2. GAS URLが正しいか
-3. GASが動作しているか
-
-「チェック」と送信すると環境変数を確認できます。
-        `.trim();
+    } catch (error) {
+        console.error('=== エラー発生 ===');
+        console.error(error);
         
         await pushMessage(userId, {
             type: 'text',
-            text: errorMessage
+            text: `❌ エラー発生\n\n${error.message}\n\n「GASテスト」や「ダミーテスト」で確認してください`
         }, env);
     }
 }
 
 async function generateImage(prompt, env) {
-    const API_KEY = env.GEMINI_API_KEY;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒でタイムアウト
     
-    const payload = {
-        instances: [{ prompt: prompt }],
-        parameters: { sampleCount: 1 }
-    };
-    
-    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok) {
-        console.error('Imagen APIエラー:', result);
-        return null;
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${env.GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                instances: [{ prompt: prompt }],
+                parameters: { sampleCount: 1 }
+            }),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`Imagen API error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result.predictions?.[0]?.bytesBase64Encoded;
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('画像生成がタイムアウトしました（8秒超過）');
+        }
+        throw error;
     }
-    
-    return result.predictions?.[0]?.bytesBase64Encoded;
 }
 
 async function uploadToGoogleDrive(base64Image, prompt, env) {
     const GAS_URL = env.GOOGLE_DRIVE_GAS_URL;
-    
     const timestamp = Date.now();
-    const cleanPrompt = prompt.substring(0, 30).replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const cleanPrompt = prompt.substring(0, 20).replace(/[^a-zA-Z0-9_\-]/g, '_');
     const filename = `${cleanPrompt}_${timestamp}.jpg`;
     
-    console.log('GASリクエスト送信:', GAS_URL);
-    console.log('ファイル名:', filename);
-    console.log('画像サイズ:', base64Image.length, '文字');
+    console.log('GAS URL:', GAS_URL);
+    console.log('Filename:', filename);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒でタイムアウト
     
     try {
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 base64Image: base64Image,
                 filename: filename
-            })
+            }),
+            signal: controller.signal
         });
         
-        console.log('GASレスポンス ステータス:', response.status);
+        clearTimeout(timeoutId);
         
         const responseText = await response.text();
-        console.log('GASレスポンス テキスト:', responseText.substring(0, 200));
+        console.log('GAS Response:', responseText.substring(0, 100));
         
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (e) {
-            console.error('JSONパースエラー:', e);
-            return {
-                success: false,
-                error: 'GASからのレスポンスがJSONではありません',
-                responseText: responseText
-            };
-        }
-        
-        if (!response.ok || result.error) {
-            console.error('GASエラー:', result);
-            return {
-                success: false,
-                error: result.error || `HTTPエラー: ${response.status}`,
-                result: result
-            };
-        }
-        
+        const result = JSON.parse(responseText);
         return result;
         
     } catch (error) {
-        console.error('GAS通信エラー:', error);
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            return {
+                success: false,
+                error: 'GASがタイムアウトしました（5秒超過）'
+            };
+        }
         return {
             success: false,
-            error: `通信エラー: ${error.message}`
+            error: error.message
         };
     }
 }
 
 async function sendReply(replyToken, message, env) {
-    const LINE_CHANNEL_TOKEN = env.LINE_CHANNEL_ACCESS_TOKEN;
-    
     await fetch('https://api.line.me/v2/bot/message/reply', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${LINE_CHANNEL_TOKEN}`
+            'Authorization': `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`
         },
         body: JSON.stringify({
             replyToken: replyToken,
@@ -247,17 +246,19 @@ async function sendReply(replyToken, message, env) {
 }
 
 async function pushMessage(userId, message, env) {
-    const LINE_CHANNEL_TOKEN = env.LINE_CHANNEL_ACCESS_TOKEN;
-    
-    await fetch('https://api.line.me/v2/bot/message/push', {
+    const response = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${LINE_CHANNEL_TOKEN}`
+            'Authorization': `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`
         },
         body: JSON.stringify({
             to: userId,
             messages: [message]
         })
     });
+    
+    if (!response.ok) {
+        console.error('Push message failed:', response.status);
+    }
 }
