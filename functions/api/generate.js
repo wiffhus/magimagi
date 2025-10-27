@@ -6,8 +6,8 @@
  */
 export async function onRequestPost({ request, env }) { 
     try {
-        // リクエストボディからプロンプトを取得
-        const { prompt } = await request.json();
+        // リクエストボディから prompt と seed を取得
+        const { prompt, seed } = await request.json(); // [修正] seed を追加
         const API_KEY = env.GEMINI_API_KEY; 
 
         if (!prompt) {
@@ -39,7 +39,8 @@ export async function onRequestPost({ request, env }) {
                 }
             ],
             parameters: {
-                sampleCount: 1
+                sampleCount: 1,
+                seed: seed // [修正] seed をAPIリクエストに追加
             }
         };
 
