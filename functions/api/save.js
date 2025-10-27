@@ -21,8 +21,7 @@ export async function onRequestPost({ request, env }) {
         }
 
         // リクエストボディを取得
-        // [修正] seed を追加
-        const { prompt, base64Image, timestamp, seed } = await request.json();
+        const { prompt, base64Image, timestamp, seed } = await request.json(); // [修正]
 
         if (!prompt || !base64Image) {
             return new Response(JSON.stringify({ 
