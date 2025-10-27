@@ -856,7 +856,11 @@
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Failed to generate image.');
+                    // 詳細なエラー情報を表示
+                    console.error('API Error:', data);
+                    const errorMsg = data.error || 'Failed to generate image.';
+                    const details = data.geminiError ? JSON.stringify(data.geminiError, null, 2) : '';
+                    throw new Error(`${errorMsg}\n${details}`);
                 }
 
                 // Display image
