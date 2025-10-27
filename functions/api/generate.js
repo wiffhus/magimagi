@@ -1,12 +1,10 @@
 // functions/api/generate.js
-// Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
-// Cloudflare環境変数からAPIキーを取得
-// Cloudflare Pagesの設定画面で「GEMINI_API_KEY」として設定してください。
-const API_KEY = process.env.GEMINI_API_KEY; 
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages';
 
-export async function onRequestPost({ request }) {
+// onRequestPost の引数を { request, env } に修正し、
+// APIキーを env.GEMINI_API_KEY から取得します。
+export async function onRequestPost({ request, env }) { // 修正ポイント: envを追加
     try {
         const { prompt } = await request.json();
 
@@ -14,9 +12,14 @@ export async function onRequestPost({ request }) {
             return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), { status: 400 });
         }
 
+        // 修正ポイント: envオブジェクトから環境変数を取得
+        const API_KEY = env.GEMINI_API_KEY; 
+
         if (!API_KEY) {
             return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), { status: 500 });
         }
+
+        // (中略) ペイロードとAPI呼び出しのロジックは変更なし
 
         // Gemini APIへのリクエストペイロード
         const payload = {
@@ -39,6 +42,8 @@ export async function onRequestPost({ request }) {
         });
 
         const geminiResult = await geminiResponse.json();
+
+        // (中略) 応答処理のロジックは変更なし
 
         if (!geminiResponse.ok || geminiResult.error) {
             console.error('Gemini APIエラー:', geminiResult.error);
