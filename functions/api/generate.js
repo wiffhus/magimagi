@@ -44,9 +44,7 @@ export async function onRequestPost({ request, env }) {
             ],
             parameters: {
                 sampleCount: 1,
-                // [NEW] フィルタリングの邪魔になる要素を排除し、品質を上げるための指示
-                negativePrompt: "low quality, cartoon, nudity, graphic content, poor detail, out of focus, illegal content",
-                aspectRatio: "4:3", // 肖像画に最適なアスペクト比に変更
+                // [削除] negativePrompt と aspectRatio はAPI側でサポートされなくなったため削除。
             }
         };
 
