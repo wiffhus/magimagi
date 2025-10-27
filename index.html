@@ -318,6 +318,57 @@
             flex-shrink: 0;
         }
 
+        .stats {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-item svg {
+            width: 14px;
+            height: 14px;
+            stroke: #666;
+        }
+
+        .stat-label {
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .cost-info {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+        }
+
+        .cost-primary {
+            font-size: 13px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .cost-secondary {
+            font-size: 11px;
+            color: #999;
+        }
+
         @media (max-width: 600px) {
             .content {
                 padding: 16px;
@@ -325,6 +376,12 @@
 
             h1 {
                 font-size: 13px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
             }
         }
     </style>
@@ -386,10 +443,54 @@
                 </div>
                 <div class="save-status" id="saveStatus"></div>
             </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span class="stat-label">Total Generations:</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Cost:</span>
+                    <div class="cost-info">
+                        <span class="cost-primary" id="totalCostUSD">$0.00</span>
+                        <span class="cost-secondary" id="totalCostJPY">(¥0)</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Constants
+        const COST_PER_GENERATION = 0.04; // USD
+        const USD_TO_JPY = 150; // Exchange rate (adjust as needed)
+        const STORAGE_KEY = 'magi2_generation_count';
+
+        // Load generation count from localStorage
+        let generationCount = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+
+        // Update display on page load
+        updateStats();
+
+        function updateStats() {
+            const totalCostUSD = (generationCount * COST_PER_GENERATION).toFixed(2);
+            const totalCostJPY = Math.round(generationCount * COST_PER_GENERATION * USD_TO_JPY);
+
+            document.getElementById('totalCount').textContent = generationCount;
+            document.getElementById('totalCostUSD').textContent = `$${totalCostUSD}`;
+            document.getElementById('totalCostJPY').textContent = `(¥${totalCostJPY.toLocaleString()})`;
+        }
+
+        function incrementGenerationCount() {
+            generationCount++;
+            localStorage.setItem(STORAGE_KEY, generationCount.toString());
+            updateStats();
+        }
+
         async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
             const generateBtn = document.getElementById('generateBtn');
@@ -434,6 +535,9 @@
                 const img = document.getElementById('generatedImage');
                 img.src = `data:image/png;base64,${data.base64Image}`;
                 result.classList.add('active');
+
+                // Increment counter after successful generation
+                incrementGenerationCount();
 
                 // Save to Google Drive via Cloudflare proxy
                 saveToGoogleDrive(prompt, data.base64Image);
