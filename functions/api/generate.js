@@ -1,7 +1,6 @@
 // functions/api/generate.js
 // Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
-// 修正: imagen-3.0-002-generate → imagen-3.0-generate
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate:generateImages';
 
 /**
@@ -15,18 +14,31 @@ export async function onRequestPost({ request, env }) {
         const { prompt } = await request.json();
 
         // Cloudflare環境変数からAPIキーを取得
-        // ここが修正されたポイントです。envオブジェクトを使用します。
         const API_KEY = env.GEMINI_API_KEY; 
 
+        // デバッグ情報
+        const debugInfo = {
+            hasPrompt: !!prompt,
+            hasApiKey: !!API_KEY,
+            apiKeyLength: API_KEY ? API_KEY.length : 0,
+            apiUrl: API_URL
+        };
+
         if (!prompt) {
-            return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), { 
+            return new Response(JSON.stringify({ 
+                error: 'プロンプトが必要です。',
+                debug: debugInfo
+            }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
         if (!API_KEY) {
-            return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), { 
+            return new Response(JSON.stringify({ 
+                error: 'APIキーが設定されていません。',
+                debug: debugInfo
+            }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -36,7 +48,6 @@ export async function onRequestPost({ request, env }) {
         const payload = {
             prompt: prompt,
             config: {
-                // 画像生成の設定 (必要に応じて変更してください)
                 number_of_images: 1,
                 output_mime_type: "image/jpeg",
                 aspect_ratio: "1:1",
@@ -52,13 +63,30 @@ export async function onRequestPost({ request, env }) {
             body: JSON.stringify(payload),
         });
 
-        const geminiResult = await geminiResponse.json();
+        // レスポンステキストを取得
+        const responseText = await geminiResponse.text();
+        let geminiResult;
+        
+        try {
+            geminiResult = JSON.parse(responseText);
+        } catch (e) {
+            return new Response(JSON.stringify({ 
+                error: 'Gemini APIからの応答が不正なJSON形式です。',
+                responseStatus: geminiResponse.status,
+                responseText: responseText.substring(0, 500), // 最初の500文字のみ
+                debug: debugInfo
+            }), { 
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
 
         if (!geminiResponse.ok || geminiResult.error) {
-            console.error('Gemini APIエラー:', geminiResult.error);
             return new Response(JSON.stringify({ 
-                error: '画像生成リクエストがGemini API側で失敗しました。', 
-                details: geminiResult.error?.message 
+                error: '画像生成リクエストがGemini API側で失敗しました。',
+                geminiStatus: geminiResponse.status,
+                geminiError: geminiResult.error,
+                debug: debugInfo
             }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
@@ -66,24 +94,33 @@ export async function onRequestPost({ request, env }) {
         }
 
         // 成功した場合、Base64エンコードされた画像データを抽出
-        const base64Image = geminiResult.generated_images[0]?.image?.image_bytes;
+        const base64Image = geminiResult.generated_images?.[0]?.image?.image_bytes;
 
         if (base64Image) {
-            // クライアントにBase64画像を返す
-            return new Response(JSON.stringify({ base64Image: base64Image }), {
+            return new Response(JSON.stringify({ 
+                base64Image: base64Image,
+                success: true
+            }), {
                 headers: { 'Content-Type': 'application/json' },
                 status: 200,
             });
         }
 
-        return new Response(JSON.stringify({ error: '画像データが取得できませんでした。' }), { 
+        return new Response(JSON.stringify({ 
+            error: '画像データが取得できませんでした。',
+            geminiResult: geminiResult,
+            debug: debugInfo
+        }), { 
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
 
     } catch (error) {
-        console.error('サーバーレス関数エラー:', error);
-        return new Response(JSON.stringify({ error: '予期せぬ内部エラーが発生しました。' }), { 
+        return new Response(JSON.stringify({ 
+            error: '予期せぬ内部エラーが発生しました。',
+            errorMessage: error.message,
+            errorStack: error.stack
+        }), { 
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
