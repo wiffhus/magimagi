@@ -6,8 +6,8 @@
  */
 export async function onRequestPost({ request, env }) { 
     try {
-        // リクエストボディからプロンプトを取得
-        const { prompt } = await request.json();
+        // リクエストボディからプロンプトとseedを取得
+        const { prompt, seed } = await request.json();
         const API_KEY = env.GEMINI_API_KEY; 
 
         if (!prompt) {
@@ -39,7 +39,10 @@ export async function onRequestPost({ request, env }) {
                 }
             ],
             parameters: {
-                sampleCount: 1
+                sampleCount: 1,
+                // Seed値を使用する場合はwatermarkをfalseにする必要がある
+                addWatermark: false,
+                seed: seed || Math.floor(Math.random() * 2147483647)
             }
         };
 
