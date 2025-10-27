@@ -28,8 +28,8 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // 正しいImagen 3.0のエンドポイント
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
+        // 正しいImagen 3.0のエンドポイント（クエリパラメータなし）
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
         
         // Imagen API の正しいペイロード形式
         const payload = {
@@ -50,6 +50,7 @@ export async function onRequestPost({ request, env }) {
         const geminiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: {
+                'x-goog-api-key': API_KEY,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
