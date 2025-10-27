@@ -1,7 +1,8 @@
 // functions/api/generate.js
 // Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate:generateImages';
+// Imagen 3.0のエンドポイント（修正版）
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict';
 
 /**
  * 画像生成リクエストを処理する Cloudflare Pages Functionsのエントリポイント
@@ -44,14 +45,19 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // Gemini APIへのリクエストペイロード
+        // Gemini APIへのリクエストペイロード（修正版）
         const payload = {
-            prompt: prompt,
-            config: {
-                number_of_images: 1,
-                output_mime_type: "image/jpeg",
-                aspect_ratio: "1:1",
-            },
+            instances: [
+                {
+                    prompt: prompt
+                }
+            ],
+            parameters: {
+                sampleCount: 1,
+                aspectRatio: "1:1",
+                safetyFilterLevel: "block_some",
+                personGeneration: "allow_adult"
+            }
         };
 
         // Gemini APIを呼び出す
@@ -73,7 +79,7 @@ export async function onRequestPost({ request, env }) {
             return new Response(JSON.stringify({ 
                 error: 'Gemini APIからの応答が不正なJSON形式です。',
                 responseStatus: geminiResponse.status,
-                responseText: responseText.substring(0, 500), // 最初の500文字のみ
+                responseText: responseText.substring(0, 1000), // 最初の1000文字
                 debug: debugInfo
             }), { 
                 status: 500,
@@ -86,6 +92,7 @@ export async function onRequestPost({ request, env }) {
                 error: '画像生成リクエストがGemini API側で失敗しました。',
                 geminiStatus: geminiResponse.status,
                 geminiError: geminiResult.error,
+                fullResponse: geminiResult,
                 debug: debugInfo
             }), { 
                 status: 500,
@@ -94,7 +101,10 @@ export async function onRequestPost({ request, env }) {
         }
 
         // 成功した場合、Base64エンコードされた画像データを抽出
-        const base64Image = geminiResult.generated_images?.[0]?.image?.image_bytes;
+        // predictions形式の場合
+        const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded || 
+                           geminiResult.predictions?.[0]?.image?.bytesBase64Encoded ||
+                           geminiResult.generated_images?.[0]?.image?.image_bytes;
 
         if (base64Image) {
             return new Response(JSON.stringify({ 
