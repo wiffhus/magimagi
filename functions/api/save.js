@@ -21,7 +21,8 @@ export async function onRequestPost({ request, env }) {
         }
 
         // リクエストボディを取得
-        const { prompt, base64Image, timestamp } = await request.json();
+        // [修正] seed を追加
+        const { prompt, base64Image, timestamp, seed } = await request.json();
 
         if (!prompt || !base64Image) {
             return new Response(JSON.stringify({ 
@@ -42,7 +43,8 @@ export async function onRequestPost({ request, env }) {
             body: JSON.stringify({
                 prompt: prompt,
                 base64Image: base64Image,
-                timestamp: timestamp || new Date().toISOString()
+                timestamp: timestamp || new Date().toISOString(),
+                seed: seed // [修正] seed をGASに転送
             }),
         });
 
