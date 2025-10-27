@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imagen 3.0 画像生成</title>
+    <title>magi2</title>
     <style>
         * {
             margin: 0;
@@ -12,8 +12,8 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+            background: #e8e8e8;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -22,78 +22,155 @@
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+            background: #ffffff;
+            border: 1px solid #c0c0c0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0;
             max-width: 800px;
             width: 100%;
+            overflow: hidden;
+        }
+
+        .title-bar {
+            background: linear-gradient(180deg, #f0f0f0 0%, #d4d4d4 100%);
+            border-bottom: 1px solid #a0a0a0;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .control-close {
+            background: #ff5f57;
+        }
+
+        .control-minimize {
+            background: #ffbd2e;
+        }
+
+        .control-maximize {
+            background: #28c840;
         }
 
         h1 {
-            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
             color: #333;
-            margin-bottom: 30px;
-            font-size: 2em;
+            flex: 1;
+            text-align: center;
+            margin-right: 44px;
+        }
+
+        .content {
+            padding: 24px;
         }
 
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 13px;
+            font-weight: 500;
         }
 
         textarea {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 8px 10px;
+            border: 1px solid #b0b0b0;
+            border-radius: 4px;
+            font-size: 13px;
             resize: vertical;
-            min-height: 120px;
+            min-height: 100px;
             font-family: inherit;
-            transition: border-color 0.3s;
+            background: #ffffff;
+            transition: border-color 0.2s;
         }
 
         textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
         button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
+            flex: 1;
+            padding: 8px 16px;
+            background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
+            color: #333;
+            border: 1px solid #b0b0b0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(180deg, #f8f8f8 0%, #d8d8d8 100%);
+            border-color: #909090;
+        }
+
+        button:active:not(:disabled) {
+            background: linear-gradient(180deg, #d8d8d8 0%, #c8c8c8 100%);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         button:disabled {
-            background: #ccc;
+            background: #f0f0f0;
+            color: #999;
             cursor: not-allowed;
+            border-color: #d0d0d0;
+        }
+
+        button.primary {
+            background: linear-gradient(180deg, #5a9bff 0%, #0066cc 100%);
+            color: white;
+            border-color: #0055aa;
+        }
+
+        button.primary:hover:not(:disabled) {
+            background: linear-gradient(180deg, #6aa8ff 0%, #0077dd 100%);
+        }
+
+        button.primary:active:not(:disabled) {
+            background: linear-gradient(180deg, #0066cc 0%, #0055aa 100%);
         }
 
         .loading {
             display: none;
             text-align: center;
-            margin-top: 20px;
-            color: #667eea;
-            font-weight: 600;
+            padding: 20px;
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            margin-bottom: 16px;
         }
 
         .loading.active {
@@ -101,23 +178,31 @@
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #666;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: #666;
         }
 
         .result {
-            margin-top: 30px;
+            margin-top: 16px;
             display: none;
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            padding: 12px;
         }
 
         .result.active {
@@ -126,111 +211,181 @@
 
         .image-container {
             position: relative;
-            display: inline-block;
-            width: 100%;
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .image-header {
+            background: #f0f0f0;
+            border-bottom: 1px solid #d0d0d0;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .image-title {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
         }
 
         .close-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.9);
+            background: none;
             border: none;
-            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            padding: 0;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            color: #333;
-            transition: all 0.3s;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 10;
+            border-radius: 3px;
+            transition: background 0.2s;
         }
 
         .close-button:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: scale(1.1);
-            color: #ff4444;
+            background: #e0e0e0;
+        }
+
+        .close-button svg {
+            width: 16px;
+            height: 16px;
+            stroke: #666;
         }
 
         .result img {
             width: 100%;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: block;
         }
 
         .save-status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
+            margin-top: 12px;
+            padding: 8px 12px;
+            border-radius: 4px;
             text-align: center;
-            font-weight: 600;
+            font-size: 12px;
             display: none;
         }
 
         .save-status.success {
             background: #d4edda;
             color: #155724;
-            display: block;
+            border: 1px solid #c3e6cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .save-status.error {
             background: #f8d7da;
             color: #721c24;
-            display: block;
+            border: 1px solid #f5c6cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .save-status svg {
+            width: 14px;
+            height: 14px;
         }
 
         .error {
-            color: #d32f2f;
-            background: #ffebee;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
             display: none;
+            font-size: 13px;
         }
 
         .error.active {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
         }
 
         @media (max-width: 600px) {
-            .container {
-                padding: 20px;
+            .content {
+                padding: 16px;
             }
 
             h1 {
-                font-size: 1.5em;
+                font-size: 13px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎨 Imagen 3.0 画像生成</h1>
-        
-        <div class="input-group">
-            <label for="prompt">プロンプトを入力してください：</label>
-            <textarea id="prompt" placeholder="例: A serene landscape with mountains and a lake at sunset"></textarea>
-        </div>
-
-        <button id="generateBtn" onclick="generateImage()">画像を生成</button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>画像を生成中...</p>
-        </div>
-
-        <div class="error" id="error"></div>
-
-        <div class="result" id="result">
-            <div class="image-container">
-                <button class="close-button" onclick="closeImage()" title="画像を閉じる">×</button>
-                <img id="generatedImage" alt="Generated Image">
+        <div class="title-bar">
+            <div class="window-controls">
+                <div class="window-control control-close"></div>
+                <div class="window-control control-minimize"></div>
+                <div class="window-control control-maximize"></div>
             </div>
-            <div class="save-status" id="saveStatus"></div>
+            <h1>magi2</h1>
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label for="prompt">Prompt</label>
+                <textarea id="prompt" placeholder="Describe the image you want to generate..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="generateBtn" class="primary" onclick="generateImage()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Generate
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Generating image...</div>
+            </div>
+
+            <div class="error" id="error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span id="errorText"></span>
+            </div>
+
+            <div class="result" id="result">
+                <div class="image-container">
+                    <div class="image-header">
+                        <span class="image-title">Generated Image</span>
+                        <button class="close-button" onclick="closeImage()" title="Close">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <img id="generatedImage" alt="Generated Image">
+                </div>
+                <div class="save-status" id="saveStatus"></div>
+            </div>
         </div>
     </div>
 
@@ -240,26 +395,27 @@
             const generateBtn = document.getElementById('generateBtn');
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
+            const errorText = document.getElementById('errorText');
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
 
-            // エラーと結果をリセット
+            // Reset
             error.classList.remove('active');
             result.classList.remove('active');
             saveStatus.className = 'save-status';
 
             if (!prompt) {
-                error.textContent = 'プロンプトを入力してください。';
+                errorText.textContent = 'Please enter a prompt.';
                 error.classList.add('active');
                 return;
             }
 
-            // UI更新
+            // UI update
             generateBtn.disabled = true;
             loading.classList.add('active');
 
             try {
-                // Cloudflare Pages Functionsに画像生成リクエスト
+                // Generate image via Cloudflare Pages Functions
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
@@ -271,19 +427,19 @@
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    throw new Error(data.error || '画像生成に失敗しました。');
+                    throw new Error(data.error || 'Failed to generate image.');
                 }
 
-                // 画像を表示
+                // Display image
                 const img = document.getElementById('generatedImage');
                 img.src = `data:image/png;base64,${data.base64Image}`;
                 result.classList.add('active');
 
-                // GASに保存リクエストを送信（Cloudflare経由で安全に）
+                // Save to Google Drive via Cloudflare proxy
                 saveToGoogleDrive(prompt, data.base64Image);
 
             } catch (err) {
-                error.textContent = `エラー: ${err.message}`;
+                errorText.textContent = err.message;
                 error.classList.add('active');
             } finally {
                 generateBtn.disabled = false;
@@ -295,11 +451,17 @@
             const saveStatus = document.getElementById('saveStatus');
             
             try {
-                saveStatus.textContent = 'Google Driveに保存中...';
+                saveStatus.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Saving to Google Drive...
+                `;
                 saveStatus.className = 'save-status';
-                saveStatus.style.display = 'block';
+                saveStatus.style.display = 'flex';
 
-                // Cloudflare Pages Functions経由でGASにアクセス（セキュア）
                 const response = await fetch('/api/save', {
                     method: 'POST',
                     headers: {
@@ -315,14 +477,26 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    saveStatus.textContent = `✓ Google Driveに保存されました！`;
+                    saveStatus.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Saved to Google Drive
+                    `;
                     saveStatus.className = 'save-status success';
                 } else {
-                    throw new Error(result.error || '保存に失敗しました');
+                    throw new Error(result.error || 'Save failed');
                 }
 
             } catch (err) {
-                saveStatus.textContent = `保存エラー: ${err.message}`;
+                saveStatus.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    ${err.message}
+                `;
                 saveStatus.className = 'save-status error';
             }
         }
@@ -334,7 +508,7 @@
             saveStatus.className = 'save-status';
         }
 
-        // Enterキーで生成（Shift+Enterで改行）
+        // Enter to generate (Shift+Enter for new line)
         document.getElementById('prompt').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
