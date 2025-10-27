@@ -28,10 +28,10 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // 正しいImagen 3.0のエンドポイント（クエリパラメータなし）
+        // 正しいImagen 3.0のエンドポイント（Vertex AI形式）
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
         
-        // Imagen API の正しいペイロード形式
+        // Imagen API の正しいペイロード形式（Vertex AI predict形式）
         const payload = {
             instances: [
                 {
@@ -40,9 +40,8 @@ export async function onRequestPost({ request, env }) {
             ],
             parameters: {
                 sampleCount: 1,
-                // Seed値を使用する場合はwatermarkをfalseにする必要がある
-                addWatermark: false,
-                seed: seed || Math.floor(Math.random() * 2147483647)
+                seed: seed || Math.floor(Math.random() * 2147483647),
+                addWatermark: false
             }
         };
 
@@ -58,13 +57,18 @@ export async function onRequestPost({ request, env }) {
 
         const responseText = await geminiResponse.text();
         
+        // デバッグ用：レスポンスをログ出力
+        console.log('Status:', geminiResponse.status);
+        console.log('Response:', responseText);
+        
         let geminiResult;
         try {
             geminiResult = JSON.parse(responseText);
         } catch (e) {
             return new Response(JSON.stringify({ 
                 error: 'APIからの応答が不正なJSON形式です。',
-                responseText: responseText.substring(0, 500)
+                responseText: responseText.substring(0, 500),
+                status: geminiResponse.status
             }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
@@ -74,14 +78,16 @@ export async function onRequestPost({ request, env }) {
         if (!geminiResponse.ok || geminiResult.error) {
             return new Response(JSON.stringify({ 
                 error: '画像生成リクエストが失敗しました。',
-                geminiError: geminiResult.error
+                geminiError: geminiResult.error || geminiResult,
+                status: geminiResponse.status,
+                fullResponse: geminiResult
             }), { 
                 status: geminiResponse.status,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
-        // Imagen API のレスポンスから画像を抽出
+        // Imagen API のレスポンスから画像を抽出（Vertex AI predict形式）
         const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded;
 
         if (base64Image) {
