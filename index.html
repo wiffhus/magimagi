@@ -3,39 +3,446 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>magimagi - Generate</title>
+    <title>magimagi</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; }
-        #output { margin-top: 20px; border: 1px solid #ccc; min-height: 200px; display: inline-block; padding: 10px; }
-        #loading { display: none; margin-top: 10px; }
-        .error { color: red; text-align: left; }
-        pre { text-align: left; background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .cost-usd {
+            color: #28a745;
+        }
+        
+        .cost-jpy {
+            color: #17a2b8;
+            font-size: 0.9em;
+        }
+        
+        .input-group {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        #prompt {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        #prompt:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .hint {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 8px;
+            text-align: left;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .loading-text {
+            margin-top: 10px;
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+        
+        #output {
+            margin-top: 30px;
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        #output img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .placeholder {
+            color: #adb5bd;
+            padding: 40px 20px;
+        }
+        
+        /* 確認ダイアログのスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .modal-buttons button {
+            margin: 0;
+            padding: 10px 30px;
+            flex: 1;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+        }
+        
+        .btn-confirm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
     </style>
 </head>
 <body>
-    <h1>magimagi</h1>
-    <input type="text" id="prompt" placeholder="生成したい画像プロンプトを入力..." style="width: 80%; padding: 10px;">
-    <button onclick="generateImage()">生成する</button>
+    <div class="container">
+        <h1>✨ magimagi ✨</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">生成枚数</div>
+                <div class="stat-value" id="totalCount">0枚</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">トータルコスト</div>
+                <div class="stat-value cost-usd" id="totalCostUSD">$0.00</div>
+                <div class="stat-value cost-jpy" id="totalCostJPY">¥0</div>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="prompt" 
+                placeholder="生成したい画像のプロンプトを入力..."
+                autofocus
+            >
+            <div class="hint">💡 Enterキーで生成開始</div>
+        </div>
+        
+        <button onclick="showConfirmDialog()" id="generateBtn">生成する</button>
 
-    <div id="loading">画像を生成中...しばらくお待ちください...</div>
-    <div id="output">ここに生成された画像が表示されます</div>
+        <div id="loading">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="loading-text" id="loadingText">画像を生成中...</div>
+        </div>
+
+        <div id="output">
+            <div class="placeholder">ここに生成された画像が表示されます</div>
+        </div>
+    </div>
+
+    <!-- 確認ダイアログ -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>🎨 画像を生成しますか？</h3>
+            <p>画像1枚あたり <strong>$0.04（約¥6）</strong> のコストがかかります。</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeConfirmDialog()">キャンセル</button>
+                <button class="btn-confirm" onclick="confirmGenerate()" id="confirmBtn">生成する</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        async function generateImage() {
-            const prompt = document.getElementById('prompt').value;
-            const outputDiv = document.getElementById('output');
-            const loadingDiv = document.getElementById('loading');
+        // ローカルストレージから統計情報を取得
+        let totalCount = parseInt(localStorage.getItem('magimagiTotalCount') || '0');
+        let totalCostUSD = parseFloat(localStorage.getItem('magimagiTotalCost') || '0');
+        
+        const COST_PER_IMAGE_USD = 0.04;
+        const USD_TO_JPY = 150; // 為替レート（適宜調整してください）
+        
+        // 統計情報を表示
+        function updateStats() {
+            document.getElementById('totalCount').textContent = totalCount + '枚';
+            document.getElementById('totalCostUSD').textContent = '$' + totalCostUSD.toFixed(2);
+            document.getElementById('totalCostJPY').textContent = '¥' + Math.round(totalCostUSD * USD_TO_JPY);
             
+            // ローカルストレージに保存
+            localStorage.setItem('magimagiTotalCount', totalCount);
+            localStorage.setItem('magimagiTotalCost', totalCostUSD);
+        }
+        
+        // 初期表示
+        updateStats();
+        
+        // Enterキーで確認ダイアログを表示
+        document.getElementById('prompt').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                showConfirmDialog();
+            }
+        });
+        
+        // 確認ダイアログを表示
+        function showConfirmDialog() {
+            const prompt = document.getElementById('prompt').value.trim();
             if (!prompt) {
                 alert('プロンプトを入力してください。');
                 return;
             }
-
+            
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'block';
+            
+            // 確認ボタンにフォーカス
+            setTimeout(() => {
+                document.getElementById('confirmBtn').focus();
+            }, 100);
+        }
+        
+        // 確認ダイアログを閉じる
+        function closeConfirmDialog() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+        
+        // ダイアログ内でEnterキーで確定
+        document.getElementById('confirmModal').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmGenerate();
+            }
+        });
+        
+        // Escapeキーでダイアログを閉じる
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeConfirmDialog();
+            }
+        });
+        
+        // モーダルの外側をクリックで閉じる
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeConfirmDialog();
+            }
+        });
+        
+        // 確認後に生成実行
+        function confirmGenerate() {
+            closeConfirmDialog();
+            generateImage();
+        }
+        
+        // 進捗バーをアニメーション
+        function animateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const loadingText = document.getElementById('loadingText');
+            
+            const stages = [
+                { progress: 20, text: 'プロンプトを解析中...', time: 500 },
+                { progress: 40, text: 'AI モデルを準備中...', time: 1000 },
+                { progress: 60, text: '画像を生成中...', time: 2000 },
+                { progress: 80, text: '最終調整中...', time: 1500 },
+                { progress: 95, text: 'もうすぐ完成...', time: 1000 }
+            ];
+            
+            let currentStage = 0;
+            
+            function updateStage() {
+                if (currentStage < stages.length) {
+                    const stage = stages[currentStage];
+                    progressBar.style.width = stage.progress + '%';
+                    progressBar.textContent = stage.progress + '%';
+                    loadingText.textContent = stage.text;
+                    currentStage++;
+                    
+                    setTimeout(updateStage, stage.time);
+                }
+            }
+            
+            updateStage();
+        }
+        
+        async function generateImage() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const outputDiv = document.getElementById('output');
+            const loadingDiv = document.getElementById('loading');
+            const generateBtn = document.getElementById('generateBtn');
+            const progressBar = document.getElementById('progressBar');
+            
             outputDiv.innerHTML = '';
-            loadingDiv.style.display = 'block'; // ローディング表示
+            loadingDiv.style.display = 'block';
+            generateBtn.disabled = true;
+            
+            // 進捗バーをリセット
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            
+            // 進捗アニメーション開始
+            animateProgress();
 
             try {
-                // Cloudflare Functionsのエンドポイントを呼び出す
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -44,42 +451,36 @@
 
                 const result = await response.json();
                 
-                // デバッグ情報を表示
-                console.log('API Response:', result);
+                // 完了時に100%に
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
                 
                 if (!response.ok) {
-                    // エラー詳細を表示
-                    outputDiv.innerHTML = `
-                        <div class="error">
-                            <h3>エラーが発生しました</h3>
-                            <p><strong>ステータス:</strong> ${response.status}</p>
-                            <p><strong>エラーメッセージ:</strong> ${result.error || '不明'}</p>
-                            ${result.geminiError ? `<p><strong>Gemini API エラー:</strong></p><pre>${JSON.stringify(result.geminiError, null, 2)}</pre>` : ''}
-                            ${result.debug ? `<p><strong>デバッグ情報:</strong></p><pre>${JSON.stringify(result.debug, null, 2)}</pre>` : ''}
-                            ${result.responseText ? `<p><strong>レスポンステキスト:</strong></p><pre>${result.responseText}</pre>` : ''}
-                            ${result.errorMessage ? `<p><strong>エラー詳細:</strong> ${result.errorMessage}</p>` : ''}
-                        </div>
-                    `;
-                    return;
+                    throw new Error(result.error || 'APIエラー');
                 }
                 
                 if (result.base64Image) {
-                    // 受け取ったBase64データを画像として表示
-                    outputDiv.innerHTML = `<img src="data:image/jpeg;base64,${result.base64Image}" style="max-width: 100%; height: auto;">`;
+                    // 成功：統計情報を更新
+                    totalCount++;
+                    totalCostUSD += COST_PER_IMAGE_USD;
+                    updateStats();
+                    
+                    outputDiv.innerHTML = `<img src="data:image/jpeg;base64,${result.base64Image}" alt="生成された画像">`;
                 } else {
-                    outputDiv.innerHTML = `<p>画像の生成に失敗しました: ${result.error || '不明なエラー'}</p>`;
+                    throw new Error('画像データの取得に失敗しました');
                 }
 
             } catch (error) {
                 console.error('画像生成エラー:', error);
                 outputDiv.innerHTML = `
                     <div class="error">
-                        <p>通信エラーが発生しました。</p>
-                        <pre>${error.message}</pre>
+                        <strong>❌ エラーが発生しました</strong><br>
+                        ${error.message}
                     </div>
                 `;
             } finally {
-                loadingDiv.style.display = 'none'; // ローディング非表示
+                loadingDiv.style.display = 'none';
+                generateBtn.disabled = false;
             }
         }
     </script>
