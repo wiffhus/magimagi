@@ -1,7 +1,7 @@
 // functions/api/generate.js
 // Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate:generateImages';
 
 /**
  * 画像生成リクエストを処理する Cloudflare Pages Functionsのエントリポイント
