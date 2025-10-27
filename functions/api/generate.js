@@ -1,8 +1,9 @@
 // functions/api/generate.js
 // Cloudflare Pages Functionsは、Workersランタイムを使用します。
 
-// Imagen 3.0のエンドポイント（修正版）
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict';
+// 画像生成API（代替形式）
+const MODEL_NAME = 'imagen-3.0-generate-001';
+const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 /**
  * 画像生成リクエストを処理する Cloudflare Pages Functionsのエントリポイント
@@ -17,18 +18,9 @@ export async function onRequestPost({ request, env }) {
         // Cloudflare環境変数からAPIキーを取得
         const API_KEY = env.GEMINI_API_KEY; 
 
-        // デバッグ情報
-        const debugInfo = {
-            hasPrompt: !!prompt,
-            hasApiKey: !!API_KEY,
-            apiKeyLength: API_KEY ? API_KEY.length : 0,
-            apiUrl: API_URL
-        };
-
         if (!prompt) {
             return new Response(JSON.stringify({ 
-                error: 'プロンプトが必要です。',
-                debug: debugInfo
+                error: 'プロンプトが必要です。'
             }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
@@ -37,31 +29,29 @@ export async function onRequestPost({ request, env }) {
 
         if (!API_KEY) {
             return new Response(JSON.stringify({ 
-                error: 'APIキーが設定されていません。',
-                debug: debugInfo
+                error: 'APIキーが設定されていません。'
             }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
-        // Gemini APIへのリクエストペイロード（修正版）
+        // パターン1: generateContent形式を試す
+        const apiUrl = `${API_BASE}/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+        
         const payload = {
-            instances: [
-                {
-                    prompt: prompt
-                }
-            ],
-            parameters: {
-                sampleCount: 1,
-                aspectRatio: "1:1",
-                safetyFilterLevel: "block_some",
-                personGeneration: "allow_adult"
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }],
+            generationConfig: {
+                responseModalities: ["image"]
             }
         };
 
         // Gemini APIを呼び出す
-        const geminiResponse = await fetch(`${API_URL}?key=${API_KEY}`, {
+        const geminiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -71,15 +61,21 @@ export async function onRequestPost({ request, env }) {
 
         // レスポンステキストを取得
         const responseText = await geminiResponse.text();
-        let geminiResult;
         
+        // デバッグ情報を含む応答
+        const debugInfo = {
+            status: geminiResponse.status,
+            statusText: geminiResponse.statusText,
+            responsePreview: responseText.substring(0, 1000),
+            apiUrl: apiUrl.replace(API_KEY, 'API_KEY_HIDDEN')
+        };
+
+        let geminiResult;
         try {
             geminiResult = JSON.parse(responseText);
         } catch (e) {
             return new Response(JSON.stringify({ 
                 error: 'Gemini APIからの応答が不正なJSON形式です。',
-                responseStatus: geminiResponse.status,
-                responseText: responseText.substring(0, 1000), // 最初の1000文字
                 debug: debugInfo
             }), { 
                 status: 500,
@@ -90,9 +86,7 @@ export async function onRequestPost({ request, env }) {
         if (!geminiResponse.ok || geminiResult.error) {
             return new Response(JSON.stringify({ 
                 error: '画像生成リクエストがGemini API側で失敗しました。',
-                geminiStatus: geminiResponse.status,
                 geminiError: geminiResult.error,
-                fullResponse: geminiResult,
                 debug: debugInfo
             }), { 
                 status: 500,
@@ -100,11 +94,22 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // 成功した場合、Base64エンコードされた画像データを抽出
-        // predictions形式の場合
-        const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded || 
-                           geminiResult.predictions?.[0]?.image?.bytesBase64Encoded ||
-                           geminiResult.generated_images?.[0]?.image?.image_bytes;
+        // レスポンスから画像データを抽出（複数パターン対応）
+        let base64Image = null;
+
+        // パターン1: candidates形式
+        if (geminiResult.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+            base64Image = geminiResult.candidates[0].content.parts[0].inlineData.data;
+        }
+        // パターン2: predictions形式
+        else if (geminiResult.predictions?.[0]) {
+            base64Image = geminiResult.predictions[0].bytesBase64Encoded || 
+                         geminiResult.predictions[0].image?.bytesBase64Encoded;
+        }
+        // パターン3: generated_images形式
+        else if (geminiResult.generated_images?.[0]) {
+            base64Image = geminiResult.generated_images[0].image?.image_bytes;
+        }
 
         if (base64Image) {
             return new Response(JSON.stringify({ 
@@ -116,9 +121,10 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
+        // 画像が見つからない場合、レスポンス全体を返す
         return new Response(JSON.stringify({ 
             error: '画像データが取得できませんでした。',
-            geminiResult: geminiResult,
+            fullResponse: geminiResult,
             debug: debugInfo
         }), { 
             status: 500,
