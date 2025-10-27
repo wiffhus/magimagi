@@ -6,8 +6,8 @@
  */
 export async function onRequestPost({ request, env }) { 
     try {
-        // リクエストボディからプロンプトと seed を取得
-        const { prompt, seed } = await request.json();
+        // リクエストボディからプロンプトを取得 (seed は使わない)
+        const { prompt } = await request.json(); // [修正] seed の受け取りをやめる
         const API_KEY = env.GEMINI_API_KEY; 
 
         if (!prompt) {
@@ -39,9 +39,8 @@ export async function onRequestPost({ request, env }) {
                 }
             ],
             parameters: {
-                sampleCount: 1,
-                seed: seed // [修正] seed のみ指定します
-                // addWatermark と enablePromptRewriting を削除
+                sampleCount: 1
+                // [修正] seed: seed を削除
             }
         };
 
