@@ -655,8 +655,25 @@
                     <option value="mummy">Mummy (90s Snapshot)</option>
                     <option value="pri">Pri (Purikura)</option>
                     <option value="pro">Pro (Experimental)</option>
+                    <option value="edit">Edit (Image Editing)</option>
                 </select>
             </div>
+
+            <!-- [追加] 編集モード用の画像アップロードエリア -->
+            <div class="input-group" id="imageUploadArea" style="display: none;">
+                <label for="imageUpload">Input Image (for Edit mode)</label>
+                <div class="upload-container">
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <button type="button" class="upload-button" onclick="document.getElementById('imageUpload').click()" style="padding: 8px 16px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Choose Image
+                    </button>
+                    <div id="uploadedImagePreview" style="display: none; margin-top: 10px;">
+                        <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #ddd;">
+                        <button type="button" onclick="removeUploadedImage()" style="margin-left: 10px; padding: 4px 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                    </div>
+                </div>
+            </div>
+
 
 
             <div class="button-group">
@@ -905,7 +922,52 @@
             });
         }
 
-        async function generateImage() {
+        
+        // [追加] 編集モード用の画像アップロード変数
+        let uploadedImageBase64 = null;
+
+        // モード切り替え時の処理
+        document.getElementById('styleMode').addEventListener('change', function(e) {
+            const uploadArea = document.getElementById('imageUploadArea');
+            if (e.target.value === 'edit') {
+                uploadArea.style.display = 'block';
+            } else {
+                uploadArea.style.display = 'none';
+            }
+        });
+
+        // 画像アップロード処理
+        document.getElementById('imageUpload').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64 = event.target.result.split(',')[1];
+                uploadedImageBase64 = base64;
+                
+                // プレビュー表示
+                const preview = document.getElementById('uploadedImagePreview');
+                const img = document.getElementById('previewImg');
+                img.src = event.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // アップロード画像削除
+        function removeUploadedImage() {
+            uploadedImageBase64 = null;
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('uploadedImagePreview').style.display = 'none';
+        }
+
+async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
             
@@ -930,6 +992,13 @@
                 return;
             }
 
+            // [追加] 編集モードの場合、画像が必要
+            if (mode === 'edit' && !uploadedImageBase64) {
+                errorText.textContent = 'Please upload an image for Edit mode.';
+                error.classList.add('active');
+                return;
+            }
+
             currentSeed = generateRandomSeed();
 
             // UI update
@@ -937,6 +1006,8 @@
             
             if (mode === 'pro') {
                 loadingText.textContent = 'Optimizing prompt (Pro)...';
+            } else if (mode === 'edit') {
+                loadingText.textContent = 'Editing image...';
             } else {
                 loadingText.textContent = 'Generating image...';
             }
@@ -949,10 +1020,17 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ 
-                        prompt: prompt,
-                        mode: mode 
-                    }),
+                    body: JSON.stringify((function() {
+                        const requestBody = {
+                            prompt: prompt,
+                            mode: mode
+                        };
+                        // 編集モードの場合、入力画像を追加
+                        if (mode === 'edit') {
+                            requestBody.inputImage = uploadedImageBase64;
+                        }
+                        return requestBody;
+                    })()),
                 });
 
                 loadingText.textContent = 'Generating image...';
@@ -1026,7 +1104,6 @@
 
                 const result = await response.json();
 
-                // [修正] thumbnailUrl または imageUrl のどちらかがあればOK
                 const imageUrl = result.thumbnailUrl || result.imageUrl;
                 
                 if (result.success && imageUrl) {
