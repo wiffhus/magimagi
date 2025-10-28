@@ -90,20 +90,35 @@
             font-weight: 500;
         }
 
-        textarea {
+        textarea,
+        select { /* [変更] select にもスタイルを適用 */
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #b0b0b0;
             border-radius: 4px;
             font-size: 13px;
-            resize: vertical;
-            min-height: 100px;
             font-family: inherit;
             background: #ffffff;
             transition: border-color 0.2s;
         }
 
-        textarea:focus {
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* [変更] select のためのスタイルを追加 */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px; /* アイコンの分だけパディング */
+        }
+
+
+        textarea:focus,
+        select:focus { /* [変更] select にも focus スタイルを適用 */
             outline: none;
             border-color: #0066cc;
             box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
@@ -228,66 +243,63 @@
 
         .image-title {
             font-size: 12px;
-            color: #666;
             font-weight: 500;
+            color: #666;
         }
 
-        .close-button {
+        .close-btn {
             background: none;
             border: none;
-            width: 24px;
-            height: 24px;
-            padding: 0;
+            color: #666;
             cursor: pointer;
+            padding: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 3px;
-            transition: background 0.2s;
+            width: auto;
+            flex: none;
         }
 
-        .close-button:hover {
+        .close-btn:hover {
             background: #e0e0e0;
+            border-radius: 2px;
         }
 
-        .close-button svg {
+        .close-btn svg {
             width: 16px;
             height: 16px;
-            stroke: #666;
         }
 
-        .result img {
-            width: 100%;
+        #generatedImage {
             display: block;
+            width: 100%;
+            height: auto;
+            border-bottom: 1px solid #d0d0d0;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: #f8f8f8;
+        }
+
+        .image-actions button {
+            font-size: 12px;
+            padding: 6px 12px;
         }
 
         .save-status {
-            margin-top: 12px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
             padding: 8px 12px;
             border-radius: 4px;
-            text-align: center;
             font-size: 12px;
-            display: none;
-        }
-
-        .save-status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .save-status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            background: #e8f4fd;
+            color: #0066cc;
+            border: 1px solid #b3d9f2;
         }
 
         .save-status svg {
@@ -295,286 +307,256 @@
             height: 14px;
         }
 
+        .save-status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+
+        .save-status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #ef9a9a;
+        }
+
         .error {
-            color: #721c24;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 16px;
             display: none;
+            padding: 12px;
+            background: #ffebee;
+            border: 1px solid #ef9a9a;
+            border-radius: 4px;
+            color: #c62828;
             font-size: 13px;
+            margin-bottom: 16px;
         }
 
         .error.active {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .error svg {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
+            display: block;
         }
 
         .stats {
-            margin-top: 16px;
+            display: flex;
+            gap: 12px;
             padding: 12px;
             background: #f8f8f8;
             border: 1px solid #d0d0d0;
             border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: #666;
+            margin-bottom: 16px;
         }
 
         .stat-item {
             display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .stat-item svg {
-            width: 14px;
-            height: 14px;
-            stroke: #666;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
         }
 
         .stat-label {
-            font-weight: 500;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
-            color: #333;
+            font-size: 18px;
             font-weight: 600;
-        }
-
-        .cost-info {
-            display: flex;
-            gap: 8px;
-            align-items: baseline;
-        }
-
-        .cost-primary {
-            font-size: 13px;
             color: #333;
-            font-weight: 600;
         }
 
-        .cost-secondary {
-            font-size: 11px;
-            color: #999;
+        #costDisplay {
+            font-size: 14px;
         }
 
-        .main-layout {
-            display: flex;
-            gap: 0;
-            height: calc(100vh - 40px);
-        }
-
-        .history-panel {
-            width: 280px;
-            background: #f8f8f8;
-            border-right: 1px solid #d0d0d0;
-            overflow-y: auto;
-            flex-shrink: 0;
+        .history {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #d0d0d0;
         }
 
         .history-header {
-            background: #e8e8e8;
-            border-bottom: 1px solid #d0d0d0;
-            padding: 12px 16px;
-            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .history-title {
+            font-size: 14px;
             font-weight: 600;
             color: #333;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .history-header svg {
-            width: 16px;
-            height: 16px;
-            stroke: #666;
+        .clear-history-btn {
+            font-size: 12px;
+            padding: 4px 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+            flex: none;
         }
 
-        .history-list {
-            padding: 8px;
+        .history-empty {
+            text-align: center;
+            padding: 32px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
         }
 
         .history-item {
             background: #ffffff;
             border: 1px solid #d0d0d0;
             border-radius: 4px;
-            padding: 8px;
-            margin-bottom: 8px;
-            cursor: pointer;
+            overflow: hidden;
             transition: all 0.2s;
+            cursor: pointer;
         }
 
         .history-item:hover {
             border-color: #0066cc;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .history-item.active {
-            border-color: #0066cc;
-            background: #e8f4ff;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
         }
 
         .history-thumbnail {
             width: 100%;
-            height: 140px;
+            aspect-ratio: 1;
             object-fit: cover;
-            border-radius: 3px;
             background: #f0f0f0;
-            margin-bottom: 8px;
+            display: block;
+        }
+
+        .history-info {
+            padding: 8px;
         }
 
         .history-prompt {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 6px;
-            line-height: 1.3;
-            max-height: 32px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 6px;
         }
 
         .history-meta {
-            font-size: 10px;
-            color: #999;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
         }
 
         .history-actions {
             display: flex;
             gap: 4px;
-            margin-top: 6px;
         }
 
         .history-btn {
             flex: 1;
+            font-size: 11px;
             padding: 4px 8px;
-            font-size: 10px;
-            background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
-            border: 1px solid #b0b0b0;
-            border-radius: 3px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-
-        .history-btn:hover {
-            background: linear-gradient(180deg, #f8f8f8 0%, #d8d8d8 100%);
         }
 
         .history-btn svg {
-            width: 10px;
-            height: 10px;
-        }
-
-        .history-empty {
-            padding: 40px 16px;
-            text-align: center;
-            color: #999;
-            font-size: 12px;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            width: 12px;
+            height: 12px;
         }
 
         .seed-display {
-            margin-top: 8px;
-            padding: 6px 10px;
-            background: #f8f8f8;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #666;
             display: none;
             align-items: center;
-            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 12px;
         }
 
         .seed-display.active {
             display: flex;
         }
 
+        .seed-label {
+            color: #666;
+            font-weight: 500;
+        }
+
         .seed-value {
-            font-family: 'Monaco', 'Courier New', monospace;
+            font-family: 'Monaco', 'Menlo', monospace;
             color: #333;
-            font-weight: 600;
+            background: #ffffff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            border: 1px solid #c0c0c0;
         }
 
         .seed-copy-btn {
-            padding: 2px 8px;
-            font-size: 10px;
+            margin-left: auto;
+            font-size: 11px;
+            padding: 4px 10px;
+            flex: none;
+        }
+
+        /* Modal for enlarged image */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 90vh;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
             background: #ffffff;
-            border: 1px solid #b0b0b0;
-            border-radius: 3px;
+            border: none;
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
         }
 
-        .seed-copy-btn:hover {
+        .modal-close:hover {
             background: #f0f0f0;
-        }
-
-        @media (max-width: 900px) {
-            .main-layout {
-                flex-direction: column;
-                height: auto;
-            }
-
-            .history-panel {
-                width: 100%;
-                max-height: 300px;
-                border-right: none;
-                border-bottom: 1px solid #d0d0d0;
-            }
-
-            .history-list {
-                display: flex;
-                overflow-x: auto;
-                padding: 8px;
-            }
-
-            .history-item {
-                min-width: 160px;
-                margin-right: 8px;
-                margin-bottom: 0;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .content {
-                padding: 16px;
-            }
-
-            h1 {
-                font-size: 13px;
-            }
-
-            .stats {
-                flex-direction: column;
-                gap: 8px;
-                align-items: flex-start;
-            }
         }
     </style>
 </head>
@@ -589,183 +571,244 @@
             <h1>magi2</h1>
         </div>
 
-        <div class="main-layout">
-            <div class="history-panel">
-                <div class="history-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                    History
+        <div class="content">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Generated</div>
+                    <div class="stat-value" id="generationCount">0</div>
                 </div>
-                <div class="history-list" id="historyList">
-                    <div class="history-empty">No images generated yet</div>
+                <div class="stat-item">
+                    <div class="stat-label">Cost</div>
+                    <div class="stat-value" id="costDisplay">$0.00 / ¥0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">History</div>
+                    <div class="stat-value" id="historyCount">0</div>
                 </div>
             </div>
 
-            <div class="main-content">
-                <div class="content">
-                    <div class="input-group">
-                        <label for="prompt">Prompt</label>
-                        <textarea id="prompt" placeholder="Describe the image you want to generate..."></textarea>
-                    </div>
+            <div class="input-group">
+                <label for="prompt">Prompt</label>
+                <textarea id="prompt" placeholder="Enter your image prompt here..."></textarea>
+            </div>
 
-                    <div class="button-group">
-                        <button id="generateBtn" class="primary" onclick="generateImage()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
+            <div class="input-group">
+                <label for="styleMode">Style Mode</label>
+                <select id="styleMode">
+                    <option value="default">Default</option>
+                    <option value="capa">Capa (B&W Photojournalism)</option>
+                    <option value="mummy">Mummy (90s Snapshot)</option>
+                    <option value="pri">Pri (Purikura)</option>
+                    <option value="pro">Pro (Experimental)</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button id="generateBtn" class="primary" onclick="generateImage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Generate
+                </button>
+            </div>
+
+            <div id="error" class="error">
+                <span id="errorText"></span>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Generating image...</div>
+            </div>
+
+            <div id="result" class="result">
+                <div class="image-container">
+                    <div class="image-header">
+                        <span class="image-title">Generated Image</span>
+                        <button class="close-btn" onclick="closeImage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            Generate
                         </button>
                     </div>
-
-                    <div class="loading" id="loading">
-                        <div class="spinner"></div>
-                        <div class="loading-text">Generating image...</div>
-                    </div>
-
-                    <div class="error" id="error">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <span id="errorText"></span>
-                    </div>
-
-                    <div class="result" id="result">
-                        <div class="image-container">
-                            <div class="image-header">
-                                <span class="image-title">Generated Image</span>
-                                <button class="close-button" onclick="closeImage()" title="Close">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                            <img id="generatedImage" alt="Generated Image">
-                        </div>
-                        <div class="seed-display" id="seedDisplay">
-                            <span>Seed: <span class="seed-value" id="seedValue">-</span></span>
-                            <button class="seed-copy-btn" onclick="copySeed()">Copy</button>
-                        </div>
-                        <div class="save-status" id="saveStatus"></div>
-                    </div>
-
-                    <div class="stats">
-                        <div class="stat-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    <img id="generatedImage" alt="Generated image" onclick="enlargeImage(this.src)">
+                    <div class="image-actions">
+                        <button onclick="downloadImage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
-                            <span class="stat-label">Total Generations:</span>
-                            <span class="stat-value" id="totalCount">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Total Cost:</span>
-                            <div class="cost-info">
-                                <span class="cost-primary" id="totalCostUSD">$0.00</span>
-                                <span class="cost-secondary" id="totalCostJPY">(¥0)</span>
-                            </div>
-                        </div>
+                            Download
+                        </button>
                     </div>
                 </div>
+                <div id="seedDisplay" class="seed-display">
+                    <span class="seed-label">Seed:</span>
+                    <span class="seed-value" id="seedValue">-</span>
+                    <button class="seed-copy-btn" onclick="copySeed()">Copy</button>
+                </div>
+                <div id="saveStatus" class="save-status"></div>
+            </div>
+
+            <div class="history">
+                <div class="history-header">
+                    <h2 class="history-title">History</h2>
+                    <button class="clear-history-btn" onclick="clearHistory()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+                <id id="historyContainer"></id>
             </div>
         </div>
     </div>
 
-    <script>
-        // Constants
-        const COST_PER_GENERATION = 0.04; // USD
-        const USD_TO_JPY = 150; // Exchange rate (adjust as needed)
-        const STORAGE_KEY = 'magi2_generation_count';
-        const HISTORY_KEY = 'magi2_history';
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <img id="modalImage" class="modal-image" alt="Enlarged image">
+        </div>
+    </div>
 
-        // Load generation count from localStorage
-        let generationCount = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
-        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    <script>
+        const STORAGE_KEY = 'imagen_history';
+        const COUNT_KEY = 'generation_count';
+        const COST_PER_IMAGE = 0.04; // $0.04 per image
+        const USD_TO_JPY = 150; // 1 USD = 150 JPY (adjust as needed)
+        let history = [];
         let currentSeed = null;
 
-        // Update display on page load
-        updateStats();
-        renderHistory();
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            loadHistory();
+            loadGenerationCount();
+        });
 
-        function updateStats() {
-            const totalCostUSD = (generationCount * COST_PER_GENERATION).toFixed(2);
-            const totalCostJPY = Math.round(generationCount * COST_PER_GENERATION * USD_TO_JPY);
+        function loadHistory() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                history = JSON.parse(stored);
+                updateHistoryDisplay();
+            }
+        }
 
-            document.getElementById('totalCount').textContent = generationCount;
-            document.getElementById('totalCostUSD').textContent = `$${totalCostUSD}`;
-            document.getElementById('totalCostJPY').textContent = `(¥${totalCostJPY.toLocaleString()})`;
+        function saveHistory() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            updateHistoryDisplay();
+        }
+
+        function loadGenerationCount() {
+            const count = localStorage.getItem(COUNT_KEY);
+            const countValue = parseInt(count || '0');
+            document.getElementById('generationCount').textContent = countValue;
+            updateCostDisplay(countValue);
         }
 
         function incrementGenerationCount() {
-            generationCount++;
-            localStorage.setItem(STORAGE_KEY, generationCount.toString());
-            updateStats();
+            const count = parseInt(localStorage.getItem(COUNT_KEY) || '0') + 1;
+            localStorage.setItem(COUNT_KEY, count.toString());
+            document.getElementById('generationCount').textContent = count;
+            updateCostDisplay(count);
+        }
+
+        function updateCostDisplay(count) {
+            const costUSD = (count * COST_PER_IMAGE).toFixed(2);
+            const costJPY = Math.round(count * COST_PER_IMAGE * USD_TO_JPY);
+            document.getElementById('costDisplay').textContent = `$${costUSD} / ¥${costJPY}`;
         }
 
         function generateRandomSeed() {
-            return Math.floor(Math.random() * 2147483647); // Max int32
+            return Math.floor(Math.random() * 2147483647);
         }
 
-        // [修正] 引数を base64Image から thumbnailUrl に変更
+        function downloadImage() {
+            const img = document.getElementById('generatedImage');
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `imagen_${Date.now()}.png`;
+            link.click();
+        }
+
+        function enlargeImage(src) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.classList.add('active');
+            modalImg.src = src;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+
         function addToHistory(prompt, thumbnailUrl, seed) {
-            const historyItem = {
+            const item = {
                 id: Date.now(),
                 prompt: prompt,
+                thumbnailUrl: thumbnailUrl,
                 seed: seed,
-                timestamp: new Date().toISOString(),
-                thumbnail: thumbnailUrl // [修正] Base64 の代わりに URL を保存
+                timestamp: new Date().toISOString()
             };
 
-            history.unshift(historyItem); // Add to beginning
-            if (history.length > 50) history = history.slice(0, 50); // Keep last 50
+            history.unshift(item);
 
-            try {
-                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-            } catch (e) {
-                console.error("Failed to save history:", e);
-                // 容量超過などで失敗した場合、古い履歴を削除してリトライするなどの処理も可能
+            if (history.length > 50) {
+                history = history.slice(0, 50);
             }
-            renderHistory();
+
+            saveHistory();
         }
 
-        function renderHistory() {
-            const historyList = document.getElementById('historyList');
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all history?')) {
+                history = [];
+                localStorage.removeItem(STORAGE_KEY);
+                updateHistoryDisplay();
+            }
+        }
+
+        function updateHistoryDisplay() {
+            const container = document.getElementById('historyContainer');
+            const countElement = document.getElementById('historyCount');
             
+            countElement.textContent = history.length;
+
             if (history.length === 0) {
-                historyList.innerHTML = '<div class="history-empty">No images generated yet</div>';
+                container.innerHTML = '<div class="history-empty">No generation history yet</div>';
                 return;
             }
 
-            historyList.innerHTML = history.map(item => `
-                <div class="history-item" data-id="${item.id}">
-                    <img src="${item.thumbnail}" class="history-thumbnail" alt="Generated" loading="lazy">
-                    <div class="history-prompt">${escapeHtml(item.prompt)}</div>
-                    <div class="history-meta">
-                        <span>Seed: ${item.seed}</span>
-                        <span>${formatDate(item.timestamp)}</span>
-                    </div>
-                    <div class="history-actions">
-                        <button class="history-btn" onclick="regenerateFromHistory(${item.id})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                            </svg>
-                            Regen
-                        </button>
-                        <button class="history-btn" onclick="variationFromHistory(${item.id})">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="19" cy="12" r="1"></circle>
-                                <circle cx="5" cy="12" r="1"></circle>
-                            </svg>
-                            Vary
-                        </button>
+            container.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" onclick="enlargeImage('${item.thumbnailUrl}')">
+                    <div class="history-info">
+                        <div class="history-prompt">${escapeHtml(item.prompt)}</div>
+                        <div class="history-meta">
+                            <span>${formatDate(item.timestamp)}</span>
+                        </div>
+                        <div class="history-actions">
+                            <button class="history-btn" onclick="regenerateFromHistory(${item.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                Regen
+                            </button>
+                            <button class="history-btn" onclick="variationFromHistory(${item.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="19" cy="12" r="1"></circle>
+                                    <circle cx="5" cy="12" r="1"></circle>
+                                </svg>
+                                Vary
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -794,7 +837,9 @@
             if (!item) return;
 
             document.getElementById('prompt').value = item.prompt;
-            generateImage(item.seed); // Use same seed
+            // [変更] どのモードで生成されたかは保存してないので、
+            // 現在選択されているモードで再生成する
+            generateImage();
         }
 
         function variationFromHistory(id) {
@@ -802,7 +847,7 @@
             if (!item) return;
 
             document.getElementById('prompt').value = item.prompt;
-            generateImage(); // Generate with new random seed
+            generateImage();
         }
 
         function copySeed() {
@@ -815,10 +860,14 @@
             });
         }
 
-        async function generateImage(seedOverride = null) {
+        async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
+            // [変更] モードを取得
+            const mode = document.getElementById('styleMode').value;
+            
             const generateBtn = document.getElementById('generateBtn');
             const loading = document.getElementById('loading');
+            const loadingText = document.querySelector('.loading-text'); // [変更]
             const error = document.getElementById('error');
             const errorText = document.getElementById('errorText');
             const result = document.getElementById('result');
@@ -837,11 +886,18 @@
                 return;
             }
 
-            // Generate or use provided seed
-            currentSeed = seedOverride !== null ? seedOverride : generateRandomSeed();
+            // Generate seed (for display purposes only)
+            currentSeed = generateRandomSeed();
 
             // UI update
             generateBtn.disabled = true;
+            
+            // [変更] Proモードの時はローディングテキストを変更
+            if (mode === 'pro') {
+                loadingText.textContent = 'Optimizing prompt (Pro)...';
+            } else {
+                loadingText.textContent = 'Generating image...';
+            }
             loading.classList.add('active');
 
             try {
@@ -851,20 +907,30 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    // [変更] prompt と mode の両方を送信
                     body: JSON.stringify({ 
                         prompt: prompt,
-                        seed: currentSeed // API が seed をサポートしていなくても送信だけ行う
+                        mode: mode 
                     }),
                 });
+
+                // [変更] Proモードで翻訳中だった場合、テキストを戻す
+                loadingText.textContent = 'Generating image...';
 
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    // 詳細なエラー情報を表示
                     console.error('API Error:', data);
                     const errorMsg = data.error || 'Failed to generate image.';
-                    const details = data.geminiError ? JSON.stringify(data.geminiError, null, 2) : '';
-                    throw new Error(`${errorMsg}\n${details}`);
+                    // [変更] APIからの詳細エラーを整形して表示
+                    let details = '';
+                    if (data.geminiError) {
+                         details = `API Error: ${JSON.stringify(data.geminiError)}`;
+                    }
+                    if (data.proTranslateError) {
+                        details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
+                    }
+                    throw new Error(`${errorMsg} ${details}`);
                 }
 
                 // Display image
@@ -876,14 +942,16 @@
                 document.getElementById('seedValue').textContent = currentSeed;
                 seedDisplay.classList.add('active');
 
-                // [削除] addToHistory の呼び出しを削除 (saveToGoogleDrive に移動)
-
                 // Increment counter after successful generation
                 incrementGenerationCount();
 
+                // [変更] 保存するプロンプトを決定
+                // Proモードの場合は、APIが返した「翻訳後のプロンプト」を保存
+                // それ以外は、ユーザーが入力したプロンプトを保存
+                const promptToSave = data.finalPrompt || prompt;
+
                 // Save to Google Drive via Cloudflare proxy
-                // [修正] この関数が成功時に addToHistory を呼び出す
-                saveToGoogleDrive(prompt, data.base64Image, currentSeed);
+                saveToGoogleDrive(promptToSave, data.base64Image, currentSeed);
 
             } catch (err) {
                 errorText.textContent = err.message;
@@ -891,10 +959,10 @@
             } finally {
                 generateBtn.disabled = false;
                 loading.classList.remove('active');
+                loadingText.textContent = 'Generating image...'; // [変更] 確実に元に戻す
             }
         }
 
-        // [修正] 保存成功時に addToHistory を呼び出すように変更
         async function saveToGoogleDrive(prompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
@@ -925,7 +993,6 @@
 
                 const result = await response.json();
 
-                // [修正] thumbnailUrl が返ってくることを期待する
                 if (result.success && result.thumbnailUrl) {
                     saveStatus.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -935,7 +1002,7 @@
                     `;
                     saveStatus.className = 'save-status success';
 
-                    // [修正] ここで履歴を追加する (Base64 の代わりに URL を使用)
+                    // [変更] 保存したプロンプト (prompt) で履歴に追加
                     addToHistory(prompt, result.thumbnailUrl, seed);
 
                 } else {
