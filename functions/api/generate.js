@@ -77,19 +77,33 @@ Rewritten Prompt:
 }
 
 /**
- * Gemini Flash Preview Image APIを使用して画像を編集する
+ * Gemini Flash APIを使用して画像を編集する
+ * 注意: Gemini 2.5 Flashは画像を直接生成せず、編集指示を解釈してImagen APIを呼び出す必要がある
  * @param {string} prompt - 編集指示のプロンプト
  * @param {string} inputImage - Base64エンコードされた入力画像
  * @param {string} apiKey - Gemini API Key for Edit
  */
 async function editImageWithGemini(prompt, inputImage, apiKey) {
-    const editApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image:generateContent?key=${apiKey}`;
+    // 注意: Gemini 2.5 Flash自体は画像生成できないため、
+    // 入力画像を解析して、Imagen用の新しいプロンプトを生成する方式に変更
+    
+    const analysisApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
 
-    const payload = {
+    // Step 1: 画像を解析して、編集後のプロンプトを生成
+    const analysisPayload = {
         contents: [
             {
                 parts: [
-                    { text: prompt },
+                    { 
+                        text: `You are an expert at analyzing images and creating detailed prompts for image generation.
+                        
+                        Analyze the uploaded image and combine it with the user's edit request to create a new detailed prompt for image generation.
+                        
+                        User's edit request: "${prompt}"
+                        
+                        Create a detailed prompt that would generate an image similar to the uploaded one but with the requested edits applied.
+                        Return ONLY the prompt text, no explanations or preamble.`
+                    },
                     {
                         inline_data: {
                             mime_type: "image/png",
@@ -100,8 +114,8 @@ async function editImageWithGemini(prompt, inputImage, apiKey) {
             }
         ],
         generationConfig: {
-            response_mime_type: "image/png",
-            temperature: 0.7
+            temperature: 0.7,
+            maxOutputTokens: 1024
         },
         safetySettings: [
             { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
@@ -112,29 +126,34 @@ async function editImageWithGemini(prompt, inputImage, apiKey) {
     };
 
     try {
-        const response = await fetch(editApiUrl, {
+        const response = await fetch(analysisApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(analysisPayload)
         });
 
         const result = await response.json();
 
         if (!response.ok || result.error) {
-            throw new Error(JSON.stringify(result.error || 'Gemini Flash Image API error'));
+            throw new Error(JSON.stringify(result.error || 'Gemini Flash API error'));
         }
 
-        // Gemini Flashの画像レスポンスを取得
-        const editedImage = result.candidates?.[0]?.content?.parts?.[0]?.inline_data?.data;
+        // 生成されたプロンプトを取得
+        const generatedPrompt = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        if (!editedImage) {
+        if (!generatedPrompt) {
             if (result.candidates?.[0]?.finishReason === 'SAFETY') {
-                throw new Error('Image editing request was blocked for safety reasons.');
+                throw new Error('Image analysis was blocked for safety reasons.');
             }
-            throw new Error('Failed to get edited image from Gemini Flash.');
+            throw new Error('Failed to generate edited prompt from image analysis.');
         }
 
-        return editedImage;
+        // Step 2: Imagen APIで新しい画像を生成
+        // 注意: これはメイン関数で行うため、プロンプトのみを返す
+        return {
+            type: 'prompt',
+            editedPrompt: generatedPrompt.trim()
+        };
 
     } catch (error) {
         console.error('editImageWithGemini Error:', error.message);
@@ -176,17 +195,75 @@ export async function onRequestPost({ request, env }) {
             }
 
             try {
-                // Gemini Flash Preview Imageで画像編集
-                const editedImageBase64 = await editImageWithGemini(prompt, inputImage, API_KEY_EDIT);
+                // Step 1: Gemini Flashで画像を解析して、編集用プロンプトを生成
+                const analysisResult = await editImageWithGemini(prompt, inputImage, API_KEY_EDIT);
                 
-                return new Response(JSON.stringify({ 
-                    base64Image: editedImageBase64,
-                    success: true,
-                    finalPrompt: prompt,
-                    mode: 'edit'
-                }), {
+                // Step 2: 生成されたプロンプトでImagen APIを使用して新しい画像を生成
+                const imagenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
+                
+                const imagenPayload = {
+                    instances: [
+                        {
+                            prompt: analysisResult.editedPrompt
+                        }
+                    ],
+                    parameters: {
+                        sampleCount: 1
+                    }
+                };
+
+                const imagenResponse = await fetch(imagenApiUrl, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    status: 200,
+                    body: JSON.stringify(imagenPayload),
+                });
+
+                const imagenResponseText = await imagenResponse.text();
+                
+                let imagenResult;
+                try {
+                    imagenResult = JSON.parse(imagenResponseText);
+                } catch (e) {
+                    return new Response(JSON.stringify({ 
+                        error: 'Imagen APIからの応答が不正なJSON形式です。',
+                        responseText: imagenResponseText.substring(0, 500)
+                    }), { 
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                if (!imagenResponse.ok || imagenResult.error) {
+                    return new Response(JSON.stringify({ 
+                        error: '編集画像の生成に失敗しました。',
+                        imagenError: imagenResult.error
+                    }), { 
+                        status: imagenResponse.status,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                const base64Image = imagenResult.predictions?.[0]?.bytesBase64Encoded;
+
+                if (base64Image) {
+                    return new Response(JSON.stringify({ 
+                        base64Image: base64Image,
+                        success: true,
+                        finalPrompt: analysisResult.editedPrompt,
+                        mode: 'edit',
+                        originalRequest: prompt
+                    }), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 200,
+                    });
+                }
+
+                return new Response(JSON.stringify({ 
+                    error: '編集画像データが取得できませんでした。',
+                    fullResponse: imagenResult
+                }), { 
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
                 });
             } catch (editError) {
                 return new Response(JSON.stringify({
