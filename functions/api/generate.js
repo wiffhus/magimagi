@@ -1,6 +1,6 @@
 // functions/api/generate.js
-// Cloudflare Pages Functions for Imagen 3.0 API
-// [変更] モード処理とProモードの翻訳機能を追加
+// Cloudflare Pages Functions for Imagen 3.0 API & Gemini Flash Preview Image
+// [変更] 編集モード（Gemini 2.5 Flash Preview Image）を追加
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -76,15 +76,81 @@ Rewritten Prompt:
     }
 }
 
+/**
+ * Gemini Flash Preview Image APIを使用して画像を編集する
+ * @param {string} prompt - 編集指示のプロンプト
+ * @param {string} inputImage - Base64エンコードされた入力画像
+ * @param {string} apiKey - Gemini API Key for Edit
+ */
+async function editImageWithGemini(prompt, inputImage, apiKey) {
+    const editApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image:generateContent?key=${apiKey}`;
+
+    const payload = {
+        contents: [
+            {
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: "image/png",
+                            data: inputImage
+                        }
+                    }
+                ]
+            }
+        ],
+        generationConfig: {
+            response_mime_type: "image/png",
+            temperature: 0.7
+        },
+        safetySettings: [
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+        ]
+    };
+
+    try {
+        const response = await fetch(editApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.error) {
+            throw new Error(JSON.stringify(result.error || 'Gemini Flash Image API error'));
+        }
+
+        // Gemini Flashの画像レスポンスを取得
+        const editedImage = result.candidates?.[0]?.content?.parts?.[0]?.inline_data?.data;
+
+        if (!editedImage) {
+            if (result.candidates?.[0]?.finishReason === 'SAFETY') {
+                throw new Error('Image editing request was blocked for safety reasons.');
+            }
+            throw new Error('Failed to get edited image from Gemini Flash.');
+        }
+
+        return editedImage;
+
+    } catch (error) {
+        console.error('editImageWithGemini Error:', error.message);
+        throw error;
+    }
+}
 
 /**
  * 画像生成リクエストを処理するエントリポイント
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // [変更] prompt と mode を受け取る
-        const { prompt, mode } = await request.json();
+        // [変更] prompt, mode, inputImage を受け取る
+        const { prompt, mode, inputImage } = await request.json();
         const API_KEY = env.GEMINI_API_KEY;
+        const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; // [追加] 編集用APIキー
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), {
@@ -93,6 +159,47 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
+        // [追加] 編集モードの処理
+        if (mode === 'edit') {
+            if (!inputImage) {
+                return new Response(JSON.stringify({ error: '編集モードでは入力画像が必要です。' }), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+
+            if (!API_KEY_EDIT) {
+                return new Response(JSON.stringify({ error: '編集用APIキーが設定されていません。' }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+
+            try {
+                // Gemini Flash Preview Imageで画像編集
+                const editedImageBase64 = await editImageWithGemini(prompt, inputImage, API_KEY_EDIT);
+                
+                return new Response(JSON.stringify({ 
+                    base64Image: editedImageBase64,
+                    success: true,
+                    finalPrompt: prompt,
+                    mode: 'edit'
+                }), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200,
+                });
+            } catch (editError) {
+                return new Response(JSON.stringify({
+                    error: '画像編集に失敗しました。',
+                    editError: editError.message
+                }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+
+        // 通常の画像生成モード処理（既存のコード）
         if (!API_KEY) {
             return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), {
                 status: 500,
