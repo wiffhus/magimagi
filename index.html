@@ -1026,7 +1026,10 @@
 
                 const result = await response.json();
 
-                if (result.success && result.thumbnailUrl) {
+                // [修正] thumbnailUrl または imageUrl のどちらかがあればOK
+                const imageUrl = result.thumbnailUrl || result.imageUrl;
+                
+                if (result.success && imageUrl) {
                     saveStatus.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -1035,10 +1038,10 @@
                     `;
                     saveStatus.className = 'save-status success';
 
-                    addToHistory(prompt, result.thumbnailUrl, seed);
+                    addToHistory(prompt, imageUrl, seed);
 
                 } else {
-                    throw new Error(result.error || 'Save failed or thumbnailUrl missing');
+                    throw new Error(result.error || 'Save failed - image URL missing');
                 }
 
             } catch (err) {
