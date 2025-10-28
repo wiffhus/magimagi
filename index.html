@@ -11,25 +11,39 @@
             box-sizing: border-box;
         }
 
+        /* [変更] body全体をFlexboxレイアウトに変更 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
             background: #e8e8e8;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            overflow: hidden; /* 2重スクロールバー防止 */
         }
 
+        /* [追加] サイドバー */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            background: #f8f8f8;
+            border-right: 1px solid #c0c0c0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        /* [変更] メインコンテナ */
         .container {
+            flex: 1; /* 残りの領域をすべて使う */
             background: #ffffff;
-            border: 1px solid #c0c0c0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: 100vh;
+            overflow-y: auto; /* メインコンテンツだけスクロール */
+            
+            /* [変更] 中央配置スタイルを解除 */
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
             padding: 0;
-            max-width: 800px;
-            width: 100%;
-            overflow: hidden;
+            max-width: none;
         }
 
         .title-bar {
@@ -39,6 +53,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            
+            /* [追加] スクロールしても追従 (オプション) */
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .window-controls {
@@ -71,7 +90,7 @@
             color: #333;
             flex: 1;
             text-align: center;
-            margin-right: 44px;
+            margin-right: 44px; /* コントロールボタン分のオフセット */
         }
 
         .content {
@@ -91,7 +110,7 @@
         }
 
         textarea,
-        select { /* [変更] select にもスタイルを適用 */
+        select {
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #b0b0b0;
@@ -107,21 +126,20 @@
             min-height: 100px;
         }
 
-        /* [変更] select のためのスタイルを追加 */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 10px center;
-            padding-right: 30px; /* アイコンの分だけパディング */
+            padding-right: 30px;
         }
 
 
         textarea:focus,
-        select:focus { /* [変更] select にも focus スタイルを適用 */
+        select:focus {
             outline: none;
             border-color: #0066cc;
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
         }
 
         .button-group {
@@ -368,17 +386,27 @@
             font-size: 14px;
         }
 
+        /* [変更] 履歴セクションのスタイル */
         .history {
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid #d0d0d0;
+            margin: 0;
+            padding: 0;
+            border-top: none;
+            flex: 1; /* サイドバーの残りの高さをすべて使う */
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Flexboxの子が縮小できるようにする */
         }
-
+        
+        /* [変更] 履歴ヘッダーをウィンドウタイトルバー風に */
         .history-header {
+            background: linear-gradient(180deg, #f0f0f0 0%, #d4d4d4 100%);
+            border-bottom: 1px solid #a0a0a0;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 0;
+            flex-shrink: 0;
         }
 
         .history-title {
@@ -401,9 +429,17 @@
             font-size: 13px;
         }
 
+        /* [変更] 履歴グリッド (コンテナ) */
+        #historyContainer {
+            overflow-y: auto;
+            flex: 1; /* 履歴をスクロール可能にする */
+            padding: 12px;
+        }
+        
+        /* [変更] 履歴グリッド (レイアウト) */
         .history-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: 1fr; /* 1列に変更 */
             gap: 12px;
         }
 
@@ -561,6 +597,25 @@
     </style>
 </head>
 <body>
+    <div class="sidebar">
+        <div class="history">
+            <div class="history-header">
+                <h2 class="history-title">History</h2>
+                <button class="clear-history-btn" onclick="clearHistory()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Clear
+                </button>
+            </div>
+            <div id="historyContainer">
+                <div class="history-grid">
+                    </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="title-bar">
             <div class="window-controls">
@@ -602,6 +657,8 @@
                     <option value="pro">Pro (Experimental)</option>
                 </select>
             </div>
+
+
             <div class="button-group">
                 <button id="generateBtn" class="primary" onclick="generateImage()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
@@ -653,20 +710,7 @@
                 <div id="saveStatus" class="save-status"></div>
             </div>
 
-            <div class="history">
-                <div class="history-header">
-                    <h2 class="history-title">History</h2>
-                    <button class="clear-history-btn" onclick="clearHistory()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        Clear
-                    </button>
-                </div>
-                <id id="historyContainer"></id>
             </div>
-        </div>
     </div>
 
     <div id="imageModal" class="modal" onclick="closeModal()">
@@ -774,17 +818,20 @@
         }
 
         function updateHistoryDisplay() {
-            const container = document.getElementById('historyContainer');
+            // [変更] 履歴グリッドのコンテナを正しくターゲットする
+            const gridContainer = document.querySelector('#historyContainer .history-grid');
             const countElement = document.getElementById('historyCount');
             
+            if (!gridContainer) return; // コンテナがなければ何もしない
+
             countElement.textContent = history.length;
 
             if (history.length === 0) {
-                container.innerHTML = '<div class="history-empty">No generation history yet</div>';
+                gridContainer.innerHTML = '<div class="history-empty">No generation history yet</div>';
                 return;
             }
 
-            container.innerHTML = history.map(item => `
+            gridContainer.innerHTML = history.map(item => `
                 <div class="history-item">
                     <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" onclick="enlargeImage('${item.thumbnailUrl}')">
                     <div class="history-info">
@@ -837,8 +884,6 @@
             if (!item) return;
 
             document.getElementById('prompt').value = item.prompt;
-            // [変更] どのモードで生成されたかは保存してないので、
-            // 現在選択されているモードで再生成する
             generateImage();
         }
 
@@ -862,12 +907,11 @@
 
         async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
-            // [変更] モードを取得
             const mode = document.getElementById('styleMode').value;
             
             const generateBtn = document.getElementById('generateBtn');
             const loading = document.getElementById('loading');
-            const loadingText = document.querySelector('.loading-text'); // [変更]
+            const loadingText = document.querySelector('.loading-text');
             const error = document.getElementById('error');
             const errorText = document.getElementById('errorText');
             const result = document.getElementById('result');
@@ -886,13 +930,11 @@
                 return;
             }
 
-            // Generate seed (for display purposes only)
             currentSeed = generateRandomSeed();
 
             // UI update
             generateBtn.disabled = true;
             
-            // [変更] Proモードの時はローディングテキストを変更
             if (mode === 'pro') {
                 loadingText.textContent = 'Optimizing prompt (Pro)...';
             } else {
@@ -907,14 +949,12 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    // [変更] prompt と mode の両方を送信
                     body: JSON.stringify({ 
                         prompt: prompt,
                         mode: mode 
                     }),
                 });
 
-                // [変更] Proモードで翻訳中だった場合、テキストを戻す
                 loadingText.textContent = 'Generating image...';
 
                 const data = await response.json();
@@ -922,7 +962,6 @@
                 if (!response.ok || data.error) {
                     console.error('API Error:', data);
                     const errorMsg = data.error || 'Failed to generate image.';
-                    // [変更] APIからの詳細エラーを整形して表示
                     let details = '';
                     if (data.geminiError) {
                          details = `API Error: ${JSON.stringify(data.geminiError)}`;
@@ -933,21 +972,15 @@
                     throw new Error(`${errorMsg} ${details}`);
                 }
 
-                // Display image
                 const img = document.getElementById('generatedImage');
                 img.src = `data:image/png;base64,${data.base64Image}`;
                 result.classList.add('active');
 
-                // Display seed
                 document.getElementById('seedValue').textContent = currentSeed;
                 seedDisplay.classList.add('active');
 
-                // Increment counter after successful generation
                 incrementGenerationCount();
 
-                // [変更] 保存するプロンプトを決定
-                // Proモードの場合は、APIが返した「翻訳後のプロンプト」を保存
-                // それ以外は、ユーザーが入力したプロンプトを保存
                 const promptToSave = data.finalPrompt || prompt;
 
                 // Save to Google Drive via Cloudflare proxy
@@ -959,7 +992,7 @@
             } finally {
                 generateBtn.disabled = false;
                 loading.classList.remove('active');
-                loadingText.textContent = 'Generating image...'; // [変更] 確実に元に戻す
+                loadingText.textContent = 'Generating image...';
             }
         }
 
@@ -1002,7 +1035,6 @@
                     `;
                     saveStatus.className = 'save-status success';
 
-                    // [変更] 保存したプロンプト (prompt) で履歴に追加
                     addToHistory(prompt, result.thumbnailUrl, seed);
 
                 } else {
