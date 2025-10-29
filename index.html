@@ -29,6 +29,11 @@
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            transition: margin-left 0.3s; /* PC版でもアニメーション追加 */
+        }
+
+        .sidebar.hidden {
+            margin-left: -280px;
         }
 
         /* [変更] メインコンテナ */
@@ -60,6 +65,7 @@
             z-index: 10;
         }
 
+        /* Mac風ボタンを削除 - コメントアウト
         .window-controls {
             display: flex;
             gap: 8px;
@@ -83,6 +89,7 @@
         .control-maximize {
             background: #28c840;
         }
+        */
 
         h1 {
             font-size: 14px;
@@ -90,8 +97,7 @@
             color: #333;
             flex: 1;
             text-align: center;
-            /* [修正] ハンバーガーボタン分も考慮 */
-            margin-right: 88px; /* (44px + 44px) */
+            margin-left: 48px; /* ハンバーガーボタン分のオフセット */
         }
 
         .content {
@@ -387,6 +393,32 @@
         .generation-counter {
             font-size: 11px;
             color: #666;
+            margin-bottom: 8px;
+        }
+
+        /* [追加] コスト計算表示 */
+        .cost-display {
+            font-size: 11px;
+            color: #666;
+            padding: 4px 0;
+            border-top: 1px solid #d0d0d0;
+            margin-top: 4px;
+            padding-top: 8px;
+        }
+
+        .cost-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .cost-label {
+            color: #999;
+        }
+
+        .cost-value {
+            font-weight: 500;
+            color: #333;
         }
 
         /* [追加] 履歴リスト */
@@ -479,7 +511,7 @@
         .menu-toggle {
             width: 32px;
             height: 32px;
-            display: none;
+            display: flex; /* PC版でも表示 */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -489,7 +521,7 @@
             cursor: pointer;
             padding: 0;
             position: absolute;
-            right: 16px;
+            left: 16px; /* 左側に配置 */
         }
 
         .menu-toggle span {
@@ -541,13 +573,27 @@
                 left: 0;
             }
 
-            .menu-toggle {
-                display: flex;
+            .sidebar.hidden {
+                margin-left: 0;
+                left: -280px;
             }
 
             h1 {
-                margin-right: 48px;
+                margin-left: 48px;
+                margin-right: 0;
             }
+        }
+
+        /* Enter2回押しのヒント表示 */
+        .input-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            display: none; /* デフォルト非表示 */
+        }
+
+        .input-hint.visible {
+            display: block;
         }
 
         /* [追加] 画像編集モードのアップロード関連 */
@@ -662,6 +708,16 @@
         <div class="sidebar-header">
             <div class="sidebar-title">History</div>
             <div class="generation-counter" id="generationCounter">0 images generated</div>
+            <div class="cost-display">
+                <div class="cost-line">
+                    <span class="cost-label">Cost (USD):</span>
+                    <span class="cost-value" id="costUSD">$0.00</span>
+                </div>
+                <div class="cost-line">
+                    <span class="cost-label">Cost (JPY):</span>
+                    <span class="cost-value" id="costJPY">¥0</span>
+                </div>
+            </div>
         </div>
         <div class="history-container" id="historyContainer">
             <div class="history-empty">No images yet</div>
@@ -673,18 +729,14 @@
 
     <div class="container">
         <div class="title-bar">
-            <div class="window-controls">
-                <div class="window-control control-close"></div>
-                <div class="window-control control-minimize"></div>
-                <div class="window-control control-maximize"></div>
-            </div>
-            <h1>magi2 - Image Generator</h1>
-            <!-- [追加] ハンバーガーメニュー -->
+            <!-- Mac風ボタンを削除 -->
+            <!-- ハンバーガーメニューを左端に配置 -->
             <button class="menu-toggle" id="menuToggle">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
+            <h1>magi2 - Image Generator</h1>
         </div>
         
         <div class="content">
@@ -694,6 +746,7 @@
                     id="prompt" 
                     placeholder="Describe what you want to create..."
                 ></textarea>
+                <div class="input-hint" id="inputHint">Press Enter again to generate</div>
             </div>
 
             <div class="input-group">
@@ -782,6 +835,9 @@
         let generationCount = 0;
         let currentOriginalPrompt = null;  // [追加] 元のプロンプトを保存
         let currentFinalPrompt = null;     // [追加] 翻訳後のプロンプトを保存
+        let lastEnterTime = 0;             // [追加] Enter2回押し検出用
+        const COST_PER_IMAGE = 0.04;       // [追加] 1枚あたりのコスト
+        const USD_TO_JPY = 150;            // [追加] 為替レート（適宜更新）
 
         // LocalStorageから履歴を読み込む
         function loadHistory() {
@@ -798,6 +854,7 @@
             if (saved) {
                 generationCount = parseInt(saved);
                 updateGenerationCounter();
+                updateCostDisplay(); // [追加] コスト表示も更新
             }
         }
 
@@ -858,12 +915,22 @@
             generationCount++;
             localStorage.setItem('generationCount', generationCount.toString());
             updateGenerationCounter();
+            updateCostDisplay(); // [追加] コスト表示も更新
         }
 
         // 生成カウンター表示を更新
         function updateGenerationCounter() {
             const counter = document.getElementById('generationCounter');
             counter.textContent = `${generationCount} images generated`;
+        }
+
+        // [追加] コスト表示を更新
+        function updateCostDisplay() {
+            const totalCostUSD = generationCount * COST_PER_IMAGE;
+            const totalCostJPY = totalCostUSD * USD_TO_JPY;
+            
+            document.getElementById('costUSD').textContent = `$${totalCostUSD.toFixed(2)}`;
+            document.getElementById('costJPY').textContent = `¥${Math.round(totalCostJPY)}`;
         }
 
         // フルサイズ画像を表示
@@ -946,6 +1013,7 @@
             result.classList.remove('active');
             saveStatus.className = 'save-status';
             seedDisplay.classList.remove('active');
+            document.getElementById('inputHint').classList.remove('visible'); // ヒントを非表示
 
             if (!prompt) {
                 errorText.textContent = 'Please enter a prompt.';
@@ -973,7 +1041,7 @@
                 loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-            closeSidebar(); // 生成開始時にサイドバーを閉じる
+            closeSidebar(); // 生成開始時にサイドバーを閉じる（モバイルのみ）
 
             try {
                 // Generate image via Cloudflare Pages Functions
@@ -1126,19 +1194,30 @@
             const overlay = document.getElementById('sidebarOverlay');
             const menuToggle = document.getElementById('menuToggle');
             
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+            // モバイルかPCかで処理を分ける
+            if (window.innerWidth <= 768) {
+                // モバイル：active クラスで制御
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            } else {
+                // PC：hidden クラスで制御
+                sidebar.classList.toggle('hidden');
+            }
+            
             menuToggle.classList.toggle('active');
         }
 
         function closeSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const menuToggle = document.getElementById('menuToggle');
-            
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-            menuToggle.classList.remove('active');
+            // モバイルのみで動作
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const menuToggle = document.getElementById('menuToggle');
+                
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                menuToggle.classList.remove('active');
+            }
         }
 
         // イベントリスナー設定
@@ -1146,6 +1225,30 @@
             // ハンバーガーメニュー
             document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
             document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+            // [追加] Enter2回押し検出
+            document.getElementById('prompt').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // デフォルトの改行を防ぐ
+                    
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - lastEnterTime;
+                    
+                    if (timeDiff < 500) { // 500ms以内の2回目のEnter
+                        document.getElementById('inputHint').classList.remove('visible');
+                        generateImage();
+                    } else {
+                        // 1回目のEnter
+                        lastEnterTime = currentTime;
+                        document.getElementById('inputHint').classList.add('visible');
+                        
+                        // 500ms後にヒントを非表示
+                        setTimeout(() => {
+                            document.getElementById('inputHint').classList.remove('visible');
+                        }, 2000);
+                    }
+                }
+            });
 
             // Style Mode変更時の処理
             document.getElementById('styleMode').addEventListener('change', function(e) {
