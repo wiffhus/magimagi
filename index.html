@@ -117,7 +117,8 @@
         }
 
         textarea,
-        select {
+        select,
+        input[type="number"] {
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #b0b0b0;
@@ -143,10 +144,31 @@
 
 
         textarea:focus,
-        select:focus {
+        select:focus,
+        input[type="number"]:focus {
             outline: none;
             border-color: #0066cc;
             box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+        }
+
+        /* [追加] リトライ設定グループ */
+        .retry-settings {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .retry-select {
+            flex: 1;
+        }
+
+        .custom-retry-input {
+            width: 80px;
+            display: none;
+        }
+
+        .custom-retry-input.visible {
+            display: block;
         }
 
         .button-group {
@@ -203,6 +225,21 @@
             background: linear-gradient(180deg, #0066cc 0%, #0055aa 100%);
         }
 
+        /* [追加] 停止ボタンスタイル */
+        button.danger {
+            background: linear-gradient(180deg, #ff6b6b 0%, #dc3545 100%);
+            color: white;
+            border-color: #c82333;
+        }
+
+        button.danger:hover:not(:disabled) {
+            background: linear-gradient(180deg, #ff5252 0%, #c82333 100%);
+        }
+
+        button.danger:active:not(:disabled) {
+            background: linear-gradient(180deg, #dc3545 0%, #bd2130 100%);
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -234,6 +271,13 @@
         .loading-text {
             font-size: 13px;
             color: #666;
+        }
+
+        /* [追加] リトライカウンター */
+        .retry-counter {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
         }
 
         .result {
@@ -761,6 +805,29 @@
                 </select>
             </div>
 
+            <!-- [追加] リトライ設定 -->
+            <div class="input-group">
+                <label for="retryCount">Auto Retry on Error</label>
+                <div class="retry-settings">
+                    <select id="retryCount" class="retry-select">
+                        <option value="0">No Retry</option>
+                        <option value="3" selected>3 Times</option>
+                        <option value="5">5 Times</option>
+                        <option value="10">10 Times</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    <input 
+                        type="number" 
+                        id="customRetryCount" 
+                        class="custom-retry-input" 
+                        min="1" 
+                        max="50" 
+                        value="15"
+                        placeholder="1-50"
+                    >
+                </div>
+            </div>
+
             <!-- [追加] Edit Mode用の情報とアップロードエリア -->
             <div class="edit-mode-info" id="editModeInfo">
                 Upload an image and describe the edits you want to make.
@@ -792,11 +859,19 @@
                     </svg>
                     Generate
                 </button>
+                <!-- [追加] 停止ボタン -->
+                <button class="danger" id="stopBtn" onclick="stopGeneration()" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="6" width="12" height="12"></rect>
+                    </svg>
+                    Stop
+                </button>
             </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div class="loading-text">Generating image...</div>
+                <div class="retry-counter" id="retryCounter"></div>
             </div>
 
             <div class="error" id="error">
@@ -838,6 +913,9 @@
         let lastEnterTime = 0;             // [追加] Enter2回押し検出用
         const COST_PER_IMAGE = 0.04;       // [追加] 1枚あたりのコスト
         const USD_TO_JPY = 150;            // [追加] 為替レート（適宜更新）
+        let isGenerating = false;          // [追加] 生成中フラグ
+        let shouldStop = false;            // [追加] 停止フラグ
+        let currentRetryCount = 0;         // [追加] 現在のリトライ回数
 
         // LocalStorageから履歴を読み込む
         function loadHistory() {
@@ -995,11 +1073,62 @@
             document.getElementById('uploadedImagePreview').classList.remove('active');
         }
 
+        // [追加] リトライ回数を取得
+        function getRetryCount() {
+            const retrySelect = document.getElementById('retryCount');
+            const customInput = document.getElementById('customRetryCount');
+            
+            if (retrySelect.value === 'custom') {
+                const customValue = parseInt(customInput.value) || 3;
+                return Math.min(Math.max(customValue, 1), 50); // 1-50の範囲に制限
+            }
+            return parseInt(retrySelect.value) || 0;
+        }
+
+        // [追加] 生成を停止
+        function stopGeneration() {
+            shouldStop = true;
+            isGenerating = false;
+            
+            const generateBtn = document.getElementById('generateBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const loading = document.getElementById('loading');
+            const loadingText = document.querySelector('.loading-text');
+            const retryCounter = document.getElementById('retryCounter');
+            const error = document.getElementById('error');
+            const errorText = document.getElementById('errorText');
+            
+            generateBtn.disabled = false;
+            stopBtn.style.display = 'none';
+            loading.classList.remove('active');
+            loadingText.textContent = 'Generating image...';
+            retryCounter.textContent = '';
+            
+            errorText.textContent = 'Generation stopped by user.';
+            error.classList.add('active');
+        }
+
+        // [追加] リトライカウンター更新
+        function updateRetryCounter(attempt, maxRetries) {
+            const retryCounter = document.getElementById('retryCounter');
+            if (attempt > 0) {
+                retryCounter.textContent = `Retry attempt ${attempt} of ${maxRetries}...`;
+            } else {
+                retryCounter.textContent = '';
+            }
+        }
+
+        // [追加] 待機関数
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
         async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
             
             const generateBtn = document.getElementById('generateBtn');
+            const stopBtn = document.getElementById('stopBtn');
             const loading = document.getElementById('loading');
             const loadingText = document.querySelector('.loading-text');
             const error = document.getElementById('error');
@@ -1007,6 +1136,7 @@
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
             const seedDisplay = document.getElementById('seedDisplay');
+            const retryCounter = document.getElementById('retryCounter');
 
             // Reset
             error.classList.remove('active');
@@ -1029,9 +1159,15 @@
             }
 
             currentSeed = generateRandomSeed();
+            const maxRetries = getRetryCount();
+            let success = false;
+            shouldStop = false;
+            isGenerating = true;
+            currentRetryCount = 0;
 
             // UI update
             generateBtn.disabled = true;
+            stopBtn.style.display = 'flex'; // 停止ボタンを表示
             
             if (mode === 'pro') {
                 loadingText.textContent = 'Optimizing prompt (Pro)...';
@@ -1043,75 +1179,102 @@
             loading.classList.add('active');
             closeSidebar(); // 生成開始時にサイドバーを閉じる（モバイルのみ）
 
-            try {
-                // Generate image via Cloudflare Pages Functions
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify((function() {
-                        const requestBody = {
-                            prompt: prompt,
-                            mode: mode
-                        };
-                        // 編集モードの場合、入力画像を追加
-                        if (mode === 'edit') {
-                            requestBody.inputImage = uploadedImageBase64;
+            // リトライループ
+            while (currentRetryCount <= maxRetries && !success && !shouldStop) {
+                try {
+                    if (currentRetryCount > 0) {
+                        updateRetryCounter(currentRetryCount, maxRetries);
+                        await sleep(2000); // リトライ前に2秒待機
+                    }
+
+                    // Generate image via Cloudflare Pages Functions
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify((function() {
+                            const requestBody = {
+                                prompt: prompt,
+                                mode: mode
+                            };
+                            // 編集モードの場合、入力画像を追加
+                            if (mode === 'edit') {
+                                requestBody.inputImage = uploadedImageBase64;
+                            }
+                            return requestBody;
+                        })()),
+                    });
+
+                    if (shouldStop) break; // 停止チェック
+
+                    loadingText.textContent = 'Generating image...';
+
+                    const data = await response.json();
+
+                    if (!response.ok || data.error) {
+                        console.error('API Error:', data);
+                        const errorMsg = data.error || 'Failed to generate image.';
+                        let details = '';
+                        if (data.geminiError) {
+                            details = `API Error: ${JSON.stringify(data.geminiError)}`;
                         }
-                        return requestBody;
-                    })()),
-                });
-
-                loadingText.textContent = 'Generating image...';
-
-                const data = await response.json();
-
-                if (!response.ok || data.error) {
-                    console.error('API Error:', data);
-                    const errorMsg = data.error || 'Failed to generate image.';
-                    let details = '';
-                    if (data.geminiError) {
-                         details = `API Error: ${JSON.stringify(data.geminiError)}`;
+                        if (data.proTranslateError) {
+                            details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
+                        }
+                        throw new Error(`${errorMsg} ${details}`);
                     }
-                    if (data.proTranslateError) {
-                        details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
+
+                    // 成功した場合
+                    const img = document.getElementById('generatedImage');
+                    img.src = `data:image/png;base64,${data.base64Image}`;
+                    result.classList.add('active');
+
+                    document.getElementById('seedValue').textContent = currentSeed;
+                    seedDisplay.classList.add('active');
+
+                    // [追加] プロンプトを保存
+                    currentOriginalPrompt = data.originalPrompt || prompt;
+                    currentFinalPrompt = data.finalPrompt || prompt;
+
+                    // [追加] 翻訳後プロンプトを表示（元のプロンプトと異なる場合のみ）
+                    if (currentFinalPrompt !== currentOriginalPrompt) {
+                        document.getElementById('finalPromptText').textContent = currentFinalPrompt;
+                        document.getElementById('promptDisplay').style.display = 'block';
+                    } else {
+                        document.getElementById('promptDisplay').style.display = 'none';
                     }
-                    throw new Error(`${errorMsg} ${details}`);
+
+                    incrementGenerationCount();
+
+                    // Save to Google Drive via Cloudflare proxy
+                    saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image, currentSeed);
+                    
+                    success = true; // 成功フラグを立てる
+
+                } catch (err) {
+                    currentRetryCount++;
+                    
+                    if (currentRetryCount > maxRetries || shouldStop) {
+                        // 最終エラー表示
+                        errorText.textContent = shouldStop 
+                            ? 'Generation stopped by user.' 
+                            : `${err.message} (Failed after ${maxRetries} retries)`;
+                        error.classList.add('active');
+                    } else {
+                        // リトライ中のメッセージ
+                        console.log(`Retry ${currentRetryCount}/${maxRetries}: ${err.message}`);
+                    }
                 }
-
-                const img = document.getElementById('generatedImage');
-                img.src = `data:image/png;base64,${data.base64Image}`;
-                result.classList.add('active');
-
-                document.getElementById('seedValue').textContent = currentSeed;
-                seedDisplay.classList.add('active');
-
-                // [追加] プロンプトを保存
-                currentOriginalPrompt = data.originalPrompt || prompt;
-                currentFinalPrompt = data.finalPrompt || prompt;
-
-                // [追加] 翻訳後プロンプトを表示（元のプロンプトと異なる場合のみ）
-                if (currentFinalPrompt !== currentOriginalPrompt) {
-                    document.getElementById('finalPromptText').textContent = currentFinalPrompt;
-                    document.getElementById('promptDisplay').style.display = 'block';
-                } else {
-                    document.getElementById('promptDisplay').style.display = 'none';
-                }
-
-                incrementGenerationCount();
-
-                // Save to Google Drive via Cloudflare proxy
-                saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image, currentSeed);
-
-            } catch (err) {
-                errorText.textContent = err.message;
-                error.classList.add('active');
-            } finally {
-                generateBtn.disabled = false;
-                loading.classList.remove('active');
-                loadingText.textContent = 'Generating image...';
             }
+
+            // クリーンアップ
+            isGenerating = false;
+            generateBtn.disabled = false;
+            stopBtn.style.display = 'none'; // 停止ボタンを非表示
+            loading.classList.remove('active');
+            loadingText.textContent = 'Generating image...';
+            retryCounter.textContent = '';
         }
 
         // [修正] saveToGoogleDrive関数を更新
@@ -1247,6 +1410,16 @@
                             document.getElementById('inputHint').classList.remove('visible');
                         }, 2000);
                     }
+                }
+            });
+
+            // [追加] リトライ設定のカスタム入力表示切り替え
+            document.getElementById('retryCount').addEventListener('change', function(e) {
+                const customInput = document.getElementById('customRetryCount');
+                if (e.target.value === 'custom') {
+                    customInput.classList.add('visible');
+                } else {
+                    customInput.classList.remove('visible');
                 }
             });
 
