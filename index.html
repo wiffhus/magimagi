@@ -90,7 +90,8 @@
             color: #333;
             flex: 1;
             text-align: center;
-            margin-right: 44px; /* コントロールボタン分のオフセット */
+            /* [修正] ハンバーガーボタン分も考慮 */
+            margin-right: 88px; /* (44px + 44px) */
         }
 
         .content {
@@ -594,10 +595,72 @@
         .modal-close:hover {
             background: #f0f0f0;
         }
+
+        /* [追加] レスポンシブ対応 */
+        .sidebar-toggle {
+            display: none; /* PCでは非表示 */
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 8px; /* コントロールボタンとの隙間 */
+        }
+        .sidebar-toggle svg {
+            width: 20px;
+            height: 20px;
+            color: #333;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 199;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden; /* 横スクロール防止 */
+            }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px; /* 幅はそのまま */
+                height: 100%;
+                z-index: 200;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                border-right: 1px solid #a0a0a0;
+                box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .sidebar-toggle {
+                display: block; /* スマホの時だけ表示 */
+            }
+            .container {
+                overflow-y: auto;
+            }
+            .overlay.active {
+                display: block;
+            }
+            
+            /* [修正] スマホの時、タイトルバーのh1マージン調整 */
+            h1 {
+                margin-right: 44px; /* コントロールボタン分だけ */
+                margin-left: 32px; /* ハンバーガーボタン分 */
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="history">
             <div class="history-header">
                 <h2 class="history-title">History</h2>
@@ -618,6 +681,14 @@
 
     <div class="container">
         <div class="title-bar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
             <div class="window-controls">
                 <div class="window-control control-close"></div>
                 <div class="window-control control-minimize"></div>
@@ -659,7 +730,6 @@
                 </select>
             </div>
 
-            <!-- [追加] 編集モード用の画像アップロードエリア -->
             <div class="input-group" id="imageUploadArea" style="display: none;">
                 <label for="imageUpload">Input Image (for Edit mode)</label>
                 <div class="upload-container">
@@ -729,6 +799,8 @@
 
             </div>
     </div>
+
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <div id="imageModal" class="modal" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -801,6 +873,7 @@
             const modalImg = document.getElementById('modalImage');
             modal.classList.add('active');
             modalImg.src = src;
+            closeSidebar(); // [追加] サイドバーを閉じる
         }
 
         function closeModal() {
@@ -808,11 +881,13 @@
             modal.classList.remove('active');
         }
 
-        function addToHistory(prompt, thumbnailUrl, seed) {
+        // [修正] fullImageUrl を引数に追加
+        function addToHistory(prompt, thumbnailUrl, seed, fullImageUrl) {
             const item = {
                 id: Date.now(),
                 prompt: prompt,
                 thumbnailUrl: thumbnailUrl,
+                fullImageUrl: fullImageUrl, // [追加] 高解像度URL
                 seed: seed,
                 timestamp: new Date().toISOString()
             };
@@ -850,7 +925,8 @@
 
             gridContainer.innerHTML = history.map(item => `
                 <div class="history-item">
-                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" onclick="enlargeImage('${item.thumbnailUrl}')">
+                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" 
+                         onclick="enlargeImage('${item.fullImageUrl || item.thumbnailUrl}')">
                     <div class="history-info">
                         <div class="history-prompt">${escapeHtml(item.prompt)}</div>
                         <div class="history-meta">
@@ -1012,144 +1088,4 @@ async function generateImage() {
                 loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-
-            try {
-                // Generate image via Cloudflare Pages Functions
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify((function() {
-                        const requestBody = {
-                            prompt: prompt,
-                            mode: mode
-                        };
-                        // 編集モードの場合、入力画像を追加
-                        if (mode === 'edit') {
-                            requestBody.inputImage = uploadedImageBase64;
-                        }
-                        return requestBody;
-                    })()),
-                });
-
-                loadingText.textContent = 'Generating image...';
-
-                const data = await response.json();
-
-                if (!response.ok || data.error) {
-                    console.error('API Error:', data);
-                    const errorMsg = data.error || 'Failed to generate image.';
-                    let details = '';
-                    if (data.geminiError) {
-                         details = `API Error: ${JSON.stringify(data.geminiError)}`;
-                    }
-                    if (data.proTranslateError) {
-                        details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
-                    }
-                    throw new Error(`${errorMsg} ${details}`);
-                }
-
-                const img = document.getElementById('generatedImage');
-                img.src = `data:image/png;base64,${data.base64Image}`;
-                result.classList.add('active');
-
-                document.getElementById('seedValue').textContent = currentSeed;
-                seedDisplay.classList.add('active');
-
-                incrementGenerationCount();
-
-                const promptToSave = data.finalPrompt || prompt;
-
-                // Save to Google Drive via Cloudflare proxy
-                saveToGoogleDrive(promptToSave, data.base64Image, currentSeed);
-
-            } catch (err) {
-                errorText.textContent = err.message;
-                error.classList.add('active');
-            } finally {
-                generateBtn.disabled = false;
-                loading.classList.remove('active');
-                loadingText.textContent = 'Generating image...';
-            }
-        }
-
-        async function saveToGoogleDrive(prompt, base64Image, seed) {
-            const saveStatus = document.getElementById('saveStatus');
-            
-            try {
-                saveStatus.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Saving to Google Drive...
-                `;
-                saveStatus.className = 'save-status';
-                saveStatus.style.display = 'flex';
-
-                const response = await fetch('/api/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        base64Image: base64Image,
-                        seed: seed,
-                        timestamp: new Date().toISOString()
-                    }),
-                });
-
-                const result = await response.json();
-
-                const imageUrl = result.thumbnailUrl || result.imageUrl;
-                
-                if (result.success && imageUrl) {
-                    saveStatus.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Saved to Google Drive
-                    `;
-                    saveStatus.className = 'save-status success';
-
-                    addToHistory(prompt, imageUrl, seed);
-
-                } else {
-                    throw new Error(result.error || 'Save failed - image URL missing');
-                }
-
-            } catch (err) {
-                saveStatus.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="15" y1="9" x2="9" y2="15"></line>
-                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                    ${err.message}
-                `;
-                saveStatus.className = 'save-status error';
-            }
-        }
-
-        function closeImage() {
-            const result = document.getElementById('result');
-            const saveStatus = document.getElementById('saveStatus');
-            const seedDisplay = document.getElementById('seedDisplay');
-            result.classList.remove('active');
-            saveStatus.className = 'save-status';
-            seedDisplay.classList.remove('active');
-        }
-
-        // Enter to generate (Shift+Enter for new line)
-        document.getElementById('prompt').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                generateImage();
-            }
-        });
-    </script>
-</body>
-</html>
+            closeSidebar(); // [追加] 生成開始時にサイドバーを
