@@ -20,13 +20,14 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // リクエストボディを取得
-        const { prompt, base64Image, timestamp, seed } = await request.json(); // [修正]
+        // [修正] originalPrompt と finalPrompt を受け取る
+        const { originalPrompt, finalPrompt, base64Image, timestamp, seed } = await request.json(); 
 
-        if (!prompt || !base64Image) {
+        // [修正] チェック対象を変更
+        if (!originalPrompt || !finalPrompt || !base64Image) {
             return new Response(JSON.stringify({ 
                 success: false,
-                error: 'プロンプトまたは画像データが不足しています。'
+                error: 'プロンプトデータまたは画像データが不足しています。'
             }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
@@ -40,10 +41,11 @@ export async function onRequestPost({ request, env }) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                prompt: prompt,
+                originalPrompt: originalPrompt, // [修正]
+                finalPrompt: finalPrompt,       // [修正]
                 base64Image: base64Image,
                 timestamp: timestamp || new Date().toISOString(),
-                seed: seed // [修正] seed をGASに転送
+                seed: seed 
             }),
         });
 
