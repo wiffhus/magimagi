@@ -5,19 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>magi2</title>
     <style>
-        /* ... (既存のスタイルはそのまま) ... */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
+        /* [変更] body全体をFlexboxレイアウトに変更 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
             background: #e8e8e8;
             min-height: 100vh;
             display: flex;
-            overflow: hidden; 
+            overflow: hidden; /* 2重スクロールバー防止 */
         }
+
+        /* [追加] サイドバー */
         .sidebar {
             width: 280px;
             height: 100vh;
@@ -27,17 +30,22 @@
             flex-direction: column;
             flex-shrink: 0;
         }
+
+        /* [変更] メインコンテナ */
         .container {
-            flex: 1; 
+            flex: 1; /* 残りの領域をすべて使う */
             background: #ffffff;
             height: 100vh;
-            overflow-y: auto; 
+            overflow-y: auto; /* メインコンテンツだけスクロール */
+            
+            /* [変更] 中央配置スタイルを解除 */
             border: none;
             border-radius: 0;
             box-shadow: none;
             padding: 0;
             max-width: none;
         }
+
         .title-bar {
             background: linear-gradient(180deg, #f0f0f0 0%, #d4d4d4 100%);
             border-bottom: 1px solid #a0a0a0;
@@ -45,33 +53,55 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            
+            /* [追加] スクロールしても追従 (オプション) */
             position: sticky;
             top: 0;
             z-index: 10;
         }
+
         .window-controls {
             display: flex;
             gap: 8px;
         }
+
         .window-control {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             border: 1px solid rgba(0, 0, 0, 0.2);
         }
-        .control-close { background: #ff5f57; }
-        .control-minimize { background: #ffbd2e; }
-        .control-maximize { background: #28c840; }
+
+        .control-close {
+            background: #ff5f57;
+        }
+
+        .control-minimize {
+            background: #ffbd2e;
+        }
+
+        .control-maximize {
+            background: #28c840;
+        }
+
         h1 {
             font-size: 14px;
             font-weight: 600;
             color: #333;
             flex: 1;
             text-align: center;
-            margin-right: 88px; 
+            /* [修正] ハンバーガーボタン分も考慮 */
+            margin-right: 88px; /* (44px + 44px) */
         }
-        .content { padding: 24px; }
-        .input-group { margin-bottom: 16px; }
+
+        .content {
+            padding: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
         label {
             display: block;
             margin-bottom: 6px;
@@ -79,6 +109,7 @@
             font-size: 13px;
             font-weight: 500;
         }
+
         textarea,
         select {
             width: 100%;
@@ -90,10 +121,12 @@
             background: #ffffff;
             transition: border-color 0.2s;
         }
+
         textarea {
             resize: vertical;
             min-height: 100px;
         }
+
         select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -101,17 +134,21 @@
             background-position: right 10px center;
             padding-right: 30px;
         }
+
+
         textarea:focus,
         select:focus {
             outline: none;
             border-color: #0066cc;
             box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
         }
+
         .button-group {
             display: flex;
             gap: 8px;
             margin-bottom: 16px;
         }
+
         button {
             flex: 1;
             padding: 8px 16px;
@@ -128,31 +165,38 @@
             justify-content: center;
             gap: 6px;
         }
+
         button:hover:not(:disabled) {
             background: linear-gradient(180deg, #f8f8f8 0%, #d8d8d8 100%);
             border-color: #909090;
         }
+
         button:active:not(:disabled) {
             background: linear-gradient(180deg, #d8d8d8 0%, #c8c8c8 100%);
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
         }
+
         button:disabled {
             background: #f0f0f0;
             color: #999;
             cursor: not-allowed;
             border-color: #d0d0d0;
         }
+
         button.primary {
             background: linear-gradient(180deg, #5a9bff 0%, #0066cc 100%);
             color: white;
             border-color: #0055aa;
         }
+
         button.primary:hover:not(:disabled) {
             background: linear-gradient(180deg, #6aa8ff 0%, #0077dd 100%);
         }
+
         button.primary:active:not(:disabled) {
             background: linear-gradient(180deg, #0066cc 0%, #0055aa 100%);
         }
+
         .loading {
             display: none;
             text-align: center;
@@ -162,7 +206,11 @@
             border-radius: 4px;
             margin-bottom: 16px;
         }
-        .loading.active { display: block; }
+
+        .loading.active {
+            display: block;
+        }
+
         .spinner {
             width: 24px;
             height: 24px;
@@ -172,11 +220,16 @@
             animation: spin 0.8s linear infinite;
             margin: 0 auto 12px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .loading-text {
             font-size: 13px;
             color: #666;
         }
+
         .result {
             margin-top: 16px;
             display: none;
@@ -185,7 +238,11 @@
             border-radius: 4px;
             padding: 12px;
         }
-        .result.active { display: block; }
+
+        .result.active {
+            display: block;
+        }
+
         .image-container {
             position: relative;
             background: #ffffff;
@@ -193,6 +250,7 @@
             border-radius: 4px;
             overflow: hidden;
         }
+
         .image-header {
             background: #f0f0f0;
             border-bottom: 1px solid #d0d0d0;
@@ -201,11 +259,13 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .image-title {
             font-size: 12px;
             font-weight: 500;
             color: #666;
         }
+
         .close-btn {
             background: none;
             border: none;
@@ -218,27 +278,36 @@
             width: auto;
             flex: none;
         }
+
         .close-btn:hover {
             background: #e0e0e0;
             border-radius: 2px;
         }
-        .close-btn svg { width: 16px; height: 16px; }
+
+        .close-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
         #generatedImage {
             display: block;
             width: 100%;
             height: auto;
             border-bottom: 1px solid #d0d0d0;
         }
+
         .image-actions {
             display: flex;
             gap: 8px;
             padding: 8px;
             background: #f8f8f8;
         }
+
         .image-actions button {
             font-size: 12px;
             padding: 6px 12px;
         }
+
         .save-status {
             display: none;
             align-items: center;
@@ -251,17 +320,24 @@
             color: #0066cc;
             border: 1px solid #b3d9f2;
         }
-        .save-status svg { width: 14px; height: 14px; }
+
+        .save-status svg {
+            width: 14px;
+            height: 14px;
+        }
+
         .save-status.success {
             background: #e8f5e9;
             color: #2e7d32;
             border-color: #a5d6a7;
         }
+
         .save-status.error {
             background: #ffebee;
             color: #c62828;
             border-color: #ef9a9a;
         }
+
         .error {
             display: none;
             padding: 12px;
@@ -272,7 +348,11 @@
             font-size: 13px;
             margin-bottom: 16px;
         }
-        .error.active { display: block; }
+
+        .error.active {
+            display: block;
+        }
+
         .stats {
             display: flex;
             gap: 12px;
@@ -282,33 +362,43 @@
             border-radius: 4px;
             margin-bottom: 16px;
         }
+
         .stat-item {
             display: flex;
             flex-direction: column;
             gap: 4px;
             flex: 1;
         }
+
         .stat-label {
             font-size: 11px;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         .stat-value {
             font-size: 18px;
             font-weight: 600;
             color: #333;
         }
-        #costDisplay { font-size: 14px; }
+
+        #costDisplay {
+            font-size: 14px;
+        }
+
+        /* [変更] 履歴セクションのスタイル */
         .history {
             margin: 0;
             padding: 0;
             border-top: none;
-            flex: 1;
+            flex: 1; /* サイドバーの残りの高さをすべて使う */
             display: flex;
             flex-direction: column;
-            min-height: 0;
+            min-height: 0; /* Flexboxの子が縮小できるようにする */
         }
+        
+        /* [変更] 履歴ヘッダーをウィンドウタイトルバー風に */
         .history-header {
             background: linear-gradient(180deg, #f0f0f0 0%, #d4d4d4 100%);
             border-bottom: 1px solid #a0a0a0;
@@ -319,33 +409,41 @@
             margin-bottom: 0;
             flex-shrink: 0;
         }
+
         .history-title {
             font-size: 14px;
             font-weight: 600;
             color: #333;
         }
+
         .clear-history-btn {
             font-size: 12px;
             padding: 4px 12px;
             background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
             flex: none;
         }
+
         .history-empty {
             text-align: center;
             padding: 32px;
             color: #999;
             font-size: 13px;
         }
+
+        /* [変更] 履歴グリッド (コンテナ) */
         #historyContainer {
             overflow-y: auto;
-            flex: 1; 
+            flex: 1; /* 履歴をスクロール可能にする */
             padding: 12px;
         }
+        
+        /* [変更] 履歴グリッド (レイアウト) */
         .history-grid {
             display: grid;
-            grid-template-columns: 1fr; 
+            grid-template-columns: 1fr; /* 1列に変更 */
             gap: 12px;
         }
+
         .history-item {
             background: #ffffff;
             border: 1px solid #d0d0d0;
@@ -354,10 +452,12 @@
             transition: all 0.2s;
             cursor: pointer;
         }
+
         .history-item:hover {
             border-color: #0066cc;
             box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
         }
+
         .history-thumbnail {
             width: 100%;
             aspect-ratio: 1;
@@ -365,7 +465,11 @@
             background: #f0f0f0;
             display: block;
         }
-        .history-info { padding: 8px; }
+
+        .history-info {
+            padding: 8px;
+        }
+
         .history-prompt {
             font-size: 12px;
             color: #333;
@@ -376,6 +480,7 @@
             overflow: hidden;
             margin-bottom: 6px;
         }
+
         .history-meta {
             display: flex;
             justify-content: space-between;
@@ -383,16 +488,23 @@
             color: #666;
             margin-bottom: 8px;
         }
+
         .history-actions {
             display: flex;
             gap: 4px;
         }
+
         .history-btn {
             flex: 1;
             font-size: 11px;
             padding: 4px 8px;
         }
-        .history-btn svg { width: 12px; height: 12px; }
+
+        .history-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
         .seed-display {
             display: none;
             align-items: center;
@@ -404,11 +516,16 @@
             margin-top: 8px;
             font-size: 12px;
         }
-        .seed-display.active { display: flex; }
+
+        .seed-display.active {
+            display: flex;
+        }
+
         .seed-label {
             color: #666;
             font-weight: 500;
         }
+
         .seed-value {
             font-family: 'Monaco', 'Menlo', monospace;
             color: #333;
@@ -417,12 +534,15 @@
             border-radius: 3px;
             border: 1px solid #c0c0c0;
         }
+
         .seed-copy-btn {
             margin-left: auto;
             font-size: 11px;
             padding: 4px 10px;
             flex: none;
         }
+
+        /* Modal for enlarged image */
         .modal {
             display: none;
             position: fixed;
@@ -435,18 +555,24 @@
             align-items: center;
             justify-content: center;
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
             position: relative;
             max-width: 90%;
             max-height: 90%;
         }
+
         .modal-image {
             max-width: 100%;
             max-height: 90vh;
             display: block;
             border-radius: 4px;
         }
+
         .modal-close {
             position: absolute;
             top: -40px;
@@ -465,20 +591,26 @@
             justify-content: center;
             padding: 0;
         }
-        .modal-close:hover { background: #f0f0f0; }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+
+        /* [追加] レスポンシブ対応 */
         .sidebar-toggle {
-            display: none; 
+            display: none; /* PCでは非表示 */
             background: none;
             border: none;
             cursor: pointer;
             padding: 4px;
-            margin-left: 8px; 
+            margin-left: 8px; /* コントロールボタンとの隙間 */
         }
         .sidebar-toggle svg {
             width: 20px;
             height: 20px;
             color: #333;
         }
+
         .overlay {
             display: none;
             position: fixed;
@@ -489,13 +621,16 @@
             background: rgba(0, 0, 0, 0.4);
             z-index: 199;
         }
+
         @media (max-width: 768px) {
-            body { overflow-x: hidden; }
+            body {
+                overflow-x: hidden; /* 横スクロール防止 */
+            }
             .sidebar {
                 position: fixed;
                 top: 0;
                 left: 0;
-                width: 280px; 
+                width: 280px; /* 幅はそのまま */
                 height: 100%;
                 z-index: 200;
                 transform: translateX(-100%);
@@ -503,57 +638,125 @@
                 border-right: 1px solid #a0a0a0;
                 box-shadow: 0 0 15px rgba(0,0,0,0.1);
             }
-            .sidebar.active { transform: translateX(0); }
-            .sidebar-toggle { display: block; }
-            .container { overflow-y: auto; }
-            .overlay.active { display: block; }
-            h1 {
-                margin-right: 44px; 
-                margin-left: 32px; 
+            .sidebar.active {
+                transform: translateX(0);
             }
-        }
-
-        /* [追加] 翻訳後プロンプト表示用のスタイル */
-        .translated-prompt-display {
-            display: none; /* JSで .active をトグル */
-            gap: 8px;
-            padding: 8px 12px;
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            margin-top: 8px;
-            font-size: 12px;
-        }
-        .translated-prompt-display.active {
-            display: flex;
-            flex-direction: column;
-        }
-        .translated-prompt-label {
-            color: #666;
-            font-weight: 500;
-        }
-        .translated-prompt-value {
-            font-family: 'Monaco', 'Menlo', monospace;
-            color: #333;
-            background: #ffffff;
-            padding: 6px 8px;
-            border-radius: 3px;
-            border: 1px solid #c0c0c0;
-            line-height: 1.4;
-            white-space: pre-wrap;
-            word-break: break-all;
+            .sidebar-toggle {
+                display: block; /* スマホの時だけ表示 */
+            }
+            .container {
+                overflow-y: auto;
+            }
+            .overlay.active {
+                display: block;
+            }
+            
+            /* [修正] スマホの時、タイトルバーのh1マージン調整 */
+            h1 {
+                margin-right: 44px; /* コントロールボタン分だけ */
+                margin-left: 32px; /* ハンバーガーボタン分 */
+            }
         }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar">
+        <div class="history">
+            <div class="history-header">
+                <h2 class="history-title">History</h2>
+                <button class="clear-history-btn" onclick="clearHistory()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Clear
+                </button>
+            </div>
+            <div id="historyContainer">
+                <div class="history-grid">
+                    </div>
+            </div>
         </div>
+    </div>
 
     <div class="container">
         <div class="title-bar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <div class="window-controls">
+                <div class="window-control control-close"></div>
+                <div class="window-control control-minimize"></div>
+                <div class="window-control control-maximize"></div>
             </div>
+            <h1>magi2</h1>
+        </div>
 
         <div class="content">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Generated</div>
+                    <div class="stat-value" id="generationCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Cost</div>
+                    <div class="stat-value" id="costDisplay">$0.00 / ¥0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">History</div>
+                    <div class="stat-value" id="historyCount">0</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="prompt">Prompt</label>
+                <textarea id="prompt" placeholder="Enter your image prompt here..."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="styleMode">Style Mode</label>
+                <select id="styleMode">
+                    <option value="default">Default</option>
+                    <option value="capa">Capa (B&W Photojournalism)</option>
+                    <option value="mummy">Mummy (90s Snapshot)</option>
+                    <option value="pri">Pri (Purikura)</option>
+                    <option value="pro">Pro (Experimental)</option>
+                    <option value="edit">Edit (Image Editing)</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="imageUploadArea" style="display: none;">
+                <label for="imageUpload">Input Image (for Edit mode)</label>
+                <div class="upload-container">
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <button type="button" class="upload-button" onclick="document.getElementById('imageUpload').click()" style="padding: 8px 16px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Choose Image
+                    </button>
+                    <div id="uploadedImagePreview" style="display: none; margin-top: 10px;">
+                        <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #ddd;">
+                        <button type="button" onclick="removeUploadedImage()" style="margin-left: 10px; padding: 4px 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="button-group">
+                <button id="generateBtn" class="primary" onclick="generateImage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Generate
+                </button>
+            </div>
+
             <div id="error" class="error">
                 <span id="errorText"></span>
             </div>
@@ -586,12 +789,6 @@
                         </button>
                     </div>
                 </div>
-
-                <div id="translatedPromptDisplay" class="translated-prompt-display">
-                    <span class="translated-prompt-label">Translated Prompt (used):</span>
-                    <span class="translated-prompt-value" id="translatedPromptValue">-</span>
-                </div>
-
                 <div id="seedDisplay" class="seed-display">
                     <span class="seed-label">Seed:</span>
                     <span class="seed-value" id="seedValue">-</span>
@@ -606,15 +803,21 @@
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <div id="imageModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <img id="modalImage" class="modal-image" alt="Enlarged image">
         </div>
+    </div>
 
-  <script>
+   <script>
         const STORAGE_KEY = 'imagen_history';
         const COUNT_KEY = 'generation_count';
         const COST_PER_IMAGE = 0.04; // $0.04 per image
         const USD_TO_JPY = 150; // 1 USD = 150 JPY (adjust as needed)
         let history = [];
         let currentSeed = null;
+        
+        // [追加] 編集モード用の画像アップロード変数
         let uploadedImageBase64 = null;
 
         // Initialize
@@ -622,6 +825,8 @@
             loadHistory();
             loadGenerationCount();
 
+            // [修正] DOMが読み込まれた後でイベントリスナーを設定
+            
             // モード切り替え時の処理
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('imageUploadArea');
@@ -636,14 +841,18 @@
             document.getElementById('imageUpload').addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
+
                 if (!file.type.startsWith('image/')) {
                     alert('Please select an image file.');
                     return;
                 }
+
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const base64 = event.target.result.split(',')[1];
                     uploadedImageBase64 = base64;
+                    
+                    // プレビュー表示
                     const preview = document.getElementById('uploadedImagePreview');
                     const img = document.getElementById('previewImg');
                     img.src = event.target.result;
@@ -706,6 +915,7 @@
             link.click();
         }
 
+        // [修正] サイドバー関数を enlargeImage より先に定義
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('overlay').classList.toggle('active');
@@ -721,7 +931,7 @@
             const modalImg = document.getElementById('modalImage');
             modal.classList.add('active');
             modalImg.src = src;
-            closeSidebar(); 
+            closeSidebar(); // [追加] サイドバーを閉じる
         }
 
         function closeModal() {
@@ -729,14 +939,13 @@
             modal.classList.remove('active');
         }
 
-        // [修正] originalPrompt, finalPrompt を引数と保存対象に追加
-        function addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl) {
+        // [修正] fullImageUrl を引数に追加
+        function addToHistory(prompt, thumbnailUrl, seed, fullImageUrl) {
             const item = {
                 id: Date.now(),
-                originalPrompt: originalPrompt, // [追加]
-                finalPrompt: finalPrompt,       // [追加]
+                prompt: prompt,
                 thumbnailUrl: thumbnailUrl,
-                fullImageUrl: fullImageUrl, 
+                fullImageUrl: fullImageUrl, // [追加] 高解像度URL
                 seed: seed,
                 timestamp: new Date().toISOString()
             };
@@ -759,10 +968,11 @@
         }
 
         function updateHistoryDisplay() {
+            // [変更] 履歴グリッドのコンテナを正しくターゲットする
             const gridContainer = document.querySelector('#historyContainer .history-grid');
             const countElement = document.getElementById('historyCount');
             
-            if (!gridContainer) return; 
+            if (!gridContainer) return; // コンテナがなければ何もしない
 
             countElement.textContent = history.length;
 
@@ -773,10 +983,10 @@
 
             gridContainer.innerHTML = history.map(item => `
                 <div class="history-item">
-                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.originalPrompt || '')}" class="history-thumbnail" 
+                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" 
                          onclick="enlargeImage('${item.fullImageUrl || item.thumbnailUrl}')">
                     <div class="history-info">
-                        <div class="history-prompt">${escapeHtml(item.originalPrompt || 'No Prompt')}</div>
+                        <div class="history-prompt">${escapeHtml(item.prompt)}</div>
                         <div class="history-meta">
                             <span>${formatDate(item.timestamp)}</span>
                         </div>
@@ -823,9 +1033,8 @@
         function regenerateFromHistory(id) {
             const item = history.find(h => h.id === id);
             if (!item) return;
-            
-            // [修正] 元のプロンプトをテキストエリアに戻す
-            document.getElementById('prompt').value = item.originalPrompt;
+
+            document.getElementById('prompt').value = item.prompt;
             generateImage();
         }
 
@@ -833,8 +1042,7 @@
             const item = history.find(h => h.id === id);
             if (!item) return;
 
-            // [修正] 元のプロンプトをテキストエリアに戻す
-            document.getElementById('prompt').value = item.originalPrompt;
+            document.getElementById('prompt').value = item.prompt;
             generateImage();
         }
 
@@ -848,6 +1056,7 @@
             });
         }
         
+        // アップロード画像削除
         function removeUploadedImage() {
             uploadedImageBase64 = null;
             document.getElementById('imageUpload').value = '';
@@ -855,8 +1064,7 @@
         }
 
 async function generateImage() {
-            // [修正] prompt を originalPrompt として扱う
-            const originalPrompt = document.getElementById('prompt').value.trim();
+            const prompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
             
             const generateBtn = document.getElementById('generateBtn');
@@ -867,23 +1075,20 @@ async function generateImage() {
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
             const seedDisplay = document.getElementById('seedDisplay');
-            // [追加] 翻訳後プロンプト表示用
-            const translatedPromptDisplay = document.getElementById('translatedPromptDisplay');
-            const translatedPromptValue = document.getElementById('translatedPromptValue');
 
             // Reset
             error.classList.remove('active');
             result.classList.remove('active');
             saveStatus.className = 'save-status';
             seedDisplay.classList.remove('active');
-            translatedPromptDisplay.classList.remove('active'); // [追加]
 
-            if (!originalPrompt) { // [修正]
+            if (!prompt) {
                 errorText.textContent = 'Please enter a prompt.';
                 error.classList.add('active');
                 return;
             }
 
+            // [追加] 編集モードの場合、画像が必要
             if (mode === 'edit' && !uploadedImageBase64) {
                 errorText.textContent = 'Please upload an image for Edit mode.';
                 error.classList.add('active');
@@ -900,11 +1105,10 @@ async function generateImage() {
             } else if (mode === 'edit') {
                 loadingText.textContent = 'Editing image...';
             } else {
-                // [修正] 翻訳ステップがあることを示唆
-                loadingText.textContent = 'Processing prompt...';
+                loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-            closeSidebar(); 
+            closeSidebar(); // [追加] 生成開始時にサイドバーを閉じる
 
             try {
                 // Generate image via Cloudflare Pages Functions
@@ -915,9 +1119,10 @@ async function generateImage() {
                     },
                     body: JSON.stringify((function() {
                         const requestBody = {
-                            prompt: originalPrompt, // [修正]
+                            prompt: prompt,
                             mode: mode
                         };
+                        // 編集モードの場合、入力画像を追加
                         if (mode === 'edit') {
                             requestBody.inputImage = uploadedImageBase64;
                         }
@@ -925,8 +1130,7 @@ async function generateImage() {
                     })()),
                 });
 
-                // [修正] 翻訳処理が入るので、ローディングテキストを変更
-                loadingText.textContent = 'Generating image (this may take a moment)...';
+                loadingText.textContent = 'Generating image...';
 
                 const data = await response.json();
 
@@ -937,8 +1141,8 @@ async function generateImage() {
                     if (data.geminiError) {
                          details = `API Error: ${JSON.stringify(data.geminiError)}`;
                     }
-                    if (data.processingError) { // [修正] エラーキー
-                        details = `Prompt Error: ${JSON.stringify(data.processingError)}`;
+                    if (data.proTranslateError) {
+                        details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
                     }
                     throw new Error(`${errorMsg} ${details}`);
                 }
@@ -950,17 +1154,12 @@ async function generateImage() {
                 document.getElementById('seedValue').textContent = currentSeed;
                 seedDisplay.classList.add('active');
 
-                // [追加] 翻訳後プロンプトを表示
-                // originalPrompt と finalPrompt が異なる場合のみ表示
-                if (data.finalPrompt && data.originalPrompt && data.finalPrompt.trim().toLowerCase() !== data.originalPrompt.trim().toLowerCase()) {
-                    translatedPromptValue.textContent = data.finalPrompt;
-                    translatedPromptDisplay.classList.add('active');
-                }
-
                 incrementGenerationCount();
 
-                // [修正] 保存関数に originalPrompt と finalPrompt を渡す
-                saveToGoogleDrive(data.originalPrompt, data.finalPrompt, data.base64Image, currentSeed);
+                const promptToSave = data.finalPrompt || prompt;
+
+                // Save to Google Drive via Cloudflare proxy
+                saveToGoogleDrive(promptToSave, data.base64Image, currentSeed);
 
             } catch (err) {
                 errorText.textContent = err.message;
@@ -972,8 +1171,7 @@ async function generateImage() {
             }
         }
 
-        // [修正] 引数を originalPrompt, finalPrompt に変更
-        async function saveToGoogleDrive(originalPrompt, finalPrompt, base64Image, seed) {
+        async function saveToGoogleDrive(prompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
             try {
@@ -994,8 +1192,7 @@ async function generateImage() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        originalPrompt: originalPrompt, // [修正]
-                        finalPrompt: finalPrompt,       // [修正]
+                        prompt: prompt,
                         base64Image: base64Image,
                         seed: seed,
                         timestamp: new Date().toISOString()
@@ -1004,6 +1201,7 @@ async function generateImage() {
 
                 const result = await response.json();
 
+                // [修正] サムネイルと高解像度URLを両方取得
                 const thumbnailUrl = result.thumbnailUrl;
                 const fullImageUrl = result.fullImageUrl;
                 
@@ -1016,8 +1214,8 @@ async function generateImage() {
                     `;
                     saveStatus.className = 'save-status success';
 
-                    // [修正] addToHistory に両方のプロンプトとURLを渡す
-                    addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl);
+                    // [修正] 両方のURLを履歴に追加
+                    addToHistory(prompt, thumbnailUrl, seed, fullImageUrl);
 
                 } else {
                     throw new Error(result.error || 'Save failed - image URL missing');
@@ -1040,12 +1238,9 @@ async function generateImage() {
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
             const seedDisplay = document.getElementById('seedDisplay');
-            const translatedPromptDisplay = document.getElementById('translatedPromptDisplay'); // [追加]
-            
             result.classList.remove('active');
             saveStatus.className = 'save-status';
             seedDisplay.classList.remove('active');
-            translatedPromptDisplay.classList.remove('active'); // [追加]
         }
     </script>
 </body>
