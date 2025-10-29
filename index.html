@@ -231,262 +231,226 @@
         }
 
         .result {
-            margin-top: 16px;
             display: none;
             background: #f8f8f8;
             border: 1px solid #d0d0d0;
             border-radius: 4px;
-            padding: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
         }
 
         .result.active {
             display: block;
         }
 
-        .image-container {
-            position: relative;
-            background: #ffffff;
+        .result img {
+            width: 100%;
+            border-radius: 4px;
+            border: 1px solid #b0b0b0;
+            margin-bottom: 12px;
+        }
+
+        /* [追加] プロンプト表示エリア */
+        .prompt-display {
+            background: #fff;
             border: 1px solid #d0d0d0;
             border-radius: 4px;
-            overflow: hidden;
+            padding: 12px;
+            margin-bottom: 12px;
         }
 
-        .image-header {
-            background: #f0f0f0;
-            border-bottom: 1px solid #d0d0d0;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .image-title {
-            font-size: 12px;
-            font-weight: 500;
+        .prompt-display-label {
+            font-size: 11px;
             color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
         }
 
-        .close-btn {
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            padding: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: auto;
-            flex: none;
-        }
-
-        .close-btn:hover {
-            background: #e0e0e0;
-            border-radius: 2px;
-        }
-
-        .close-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        #generatedImage {
-            display: block;
-            width: 100%;
-            height: auto;
-            border-bottom: 1px solid #d0d0d0;
-        }
-
-        .image-actions {
-            display: flex;
-            gap: 8px;
-            padding: 8px;
-            background: #f8f8f8;
-        }
-
-        .image-actions button {
-            font-size: 12px;
-            padding: 6px 12px;
-        }
-
-        .save-status {
-            display: none;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            background: #e8f4fd;
-            color: #0066cc;
-            border: 1px solid #b3d9f2;
-        }
-
-        .save-status svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .save-status.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-color: #a5d6a7;
-        }
-
-        .save-status.error {
-            background: #ffebee;
-            color: #c62828;
-            border-color: #ef9a9a;
+        .prompt-display-text {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+            word-wrap: break-word;
         }
 
         .error {
             display: none;
-            padding: 12px;
-            background: #ffebee;
-            border: 1px solid #ef9a9a;
+            background: #fff5f5;
+            border: 1px solid #ff9999;
             border-radius: 4px;
-            color: #c62828;
-            font-size: 13px;
+            padding: 12px;
             margin-bottom: 16px;
+            color: #cc0000;
+            font-size: 13px;
         }
 
         .error.active {
             display: block;
         }
 
-        .stats {
-            display: flex;
-            gap: 12px;
-            padding: 12px;
-            background: #f8f8f8;
-            border: 1px solid #d0d0d0;
+        .save-status {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 10px;
             border-radius: 4px;
-            margin-bottom: 16px;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-        }
-
-        .stat-label {
-            font-size: 11px;
+            margin-bottom: 12px;
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
             color: #666;
+        }
+
+        .save-status.success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .save-status.error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .save-status svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .seed-display {
+            display: none;
+            background: #f0f8ff;
+            border: 1px solid #b0d4ff;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .seed-display.active {
+            display: flex;
+        }
+
+        .seed-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #0066cc;
+        }
+
+        .seed-label {
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .stat-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
+        .seed-value {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-weight: 500;
         }
 
-        #costDisplay {
-            font-size: 14px;
+        .seed-copy-btn {
+            padding: 4px 8px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        /* [変更] 履歴セクションのスタイル */
-        .history {
-            margin: 0;
-            padding: 0;
-            border-top: none;
-            flex: 1; /* サイドバーの残りの高さをすべて使う */
-            display: flex;
-            flex-direction: column;
-            min-height: 0; /* Flexboxの子が縮小できるようにする */
-        }
-        
-        /* [変更] 履歴ヘッダーをウィンドウタイトルバー風に */
-        .history-header {
-            background: linear-gradient(180deg, #f0f0f0 0%, #d4d4d4 100%);
-            border-bottom: 1px solid #a0a0a0;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0;
-            flex-shrink: 0;
+        .seed-copy-btn:hover {
+            background: #0055aa;
         }
 
-        .history-title {
+        /* [追加] サイドバーのヘッダー */
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #d0d0d0;
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+        }
+
+        .sidebar-title {
             font-size: 14px;
             font-weight: 600;
             color: #333;
+            margin-bottom: 4px;
         }
 
-        .clear-history-btn {
-            font-size: 12px;
-            padding: 4px 12px;
-            background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-            flex: none;
+        .generation-counter {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* [追加] 履歴リスト */
+        .history-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
         }
 
         .history-empty {
             text-align: center;
-            padding: 32px;
             color: #999;
-            font-size: 13px;
-        }
-
-        /* [変更] 履歴グリッド (コンテナ) */
-        #historyContainer {
-            overflow-y: auto;
-            flex: 1; /* 履歴をスクロール可能にする */
-            padding: 12px;
-        }
-        
-        /* [変更] 履歴グリッド (レイアウト) */
-        .history-grid {
-            display: grid;
-            grid-template-columns: 1fr; /* 1列に変更 */
-            gap: 12px;
+            font-size: 12px;
+            margin-top: 24px;
         }
 
         .history-item {
-            background: #ffffff;
+            background: white;
             border: 1px solid #d0d0d0;
             border-radius: 4px;
-            overflow: hidden;
-            transition: all 0.2s;
+            padding: 10px;
+            margin-bottom: 8px;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .history-item:hover {
-            border-color: #0066cc;
-            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+            background: #f5f5f5;
+            border-color: #999;
         }
 
         .history-thumbnail {
             width: 100%;
-            aspect-ratio: 1;
+            height: 120px;
             object-fit: cover;
+            border-radius: 3px;
+            margin-bottom: 8px;
             background: #f0f0f0;
-            display: block;
-        }
-
-        .history-info {
-            padding: 8px;
         }
 
         .history-prompt {
             font-size: 12px;
             color: #333;
             line-height: 1.4;
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin-bottom: 6px;
         }
 
         .history-meta {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 11px;
             color: #666;
-            margin-bottom: 8px;
+        }
+
+        .history-time {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .history-actions {
@@ -494,524 +458,425 @@
             gap: 4px;
         }
 
-        .history-btn {
-            flex: 1;
-            font-size: 11px;
-            padding: 4px 8px;
-        }
-
-        .history-btn svg {
-            width: 12px;
-            height: 12px;
-        }
-
-        .seed-display {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            margin-top: 8px;
-            font-size: 12px;
-        }
-
-        .seed-display.active {
-            display: flex;
-        }
-
-        .seed-label {
-            color: #666;
-            font-weight: 500;
-        }
-
-        .seed-value {
-            font-family: 'Monaco', 'Menlo', monospace;
-            color: #333;
-            background: #ffffff;
-            padding: 2px 8px;
+        .history-action-btn {
+            padding: 2px 6px;
+            background: transparent;
+            color: #0066cc;
+            border: 1px solid #0066cc;
             border-radius: 3px;
-            border: 1px solid #c0c0c0;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .seed-copy-btn {
-            margin-left: auto;
-            font-size: 11px;
-            padding: 4px 10px;
-            flex: none;
+        .history-action-btn:hover {
+            background: #0066cc;
+            color: white;
         }
 
-        /* Modal for enlarged image */
-        .modal {
+        /* [追加] ハンバーガーメニューボタン */
+        .menu-toggle {
+            width: 32px;
+            height: 32px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            position: absolute;
+            right: 16px;
+        }
+
+        .menu-toggle span {
+            width: 18px;
+            height: 2px;
+            background: #666;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(3px, 3px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(3px, -3px);
+        }
+
+        /* [追加] オーバーレイ */
+        .sidebar-overlay {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            position: relative;
-            max-width: 90%;
-            max-height: 90%;
-        }
-
-        .modal-image {
-            max-width: 100%;
-            max-height: 90vh;
-            display: block;
-            border-radius: 4px;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: -40px;
+            left: 0;
             right: 0;
-            background: #ffffff;
-            border: none;
-            color: #333;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 98;
         }
 
-        .modal-close:hover {
-            background: #f0f0f0;
+        .sidebar-overlay.active {
+            display: block;
         }
 
         /* [追加] レスポンシブ対応 */
-        .sidebar-toggle {
-            display: none; /* PCでは非表示 */
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            margin-left: 8px; /* コントロールボタンとの隙間 */
-        }
-        .sidebar-toggle svg {
-            width: 20px;
-            height: 20px;
-            color: #333;
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 199;
-        }
-
         @media (max-width: 768px) {
-            body {
-                overflow-x: hidden; /* 横スクロール防止 */
-            }
             .sidebar {
                 position: fixed;
-                top: 0;
-                left: 0;
-                width: 280px; /* 幅はそのまま */
-                height: 100%;
-                z-index: 200;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                border-right: 1px solid #a0a0a0;
-                box-shadow: 0 0 15px rgba(0,0,0,0.1);
+                left: -280px;
+                z-index: 99;
+                transition: left 0.3s;
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
             }
+
             .sidebar.active {
-                transform: translateX(0);
+                left: 0;
             }
-            .sidebar-toggle {
-                display: block; /* スマホの時だけ表示 */
+
+            .menu-toggle {
+                display: flex;
             }
-            .container {
-                overflow-y: auto;
-            }
-            .overlay.active {
-                display: block;
-            }
-            
-            /* [修正] スマホの時、タイトルバーのh1マージン調整 */
+
             h1 {
-                margin-right: 44px; /* コントロールボタン分だけ */
-                margin-left: 32px; /* ハンバーガーボタン分 */
+                margin-right: 48px;
             }
+        }
+
+        /* [追加] 画像編集モードのアップロード関連 */
+        .upload-area {
+            border: 2px dashed #b0b0b0;
+            border-radius: 4px;
+            padding: 24px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .upload-area:hover {
+            border-color: #0066cc;
+            background: #f0f8ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: #0066cc;
+            background: #e6f2ff;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            opacity: 0.5;
+        }
+
+        .upload-text {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .upload-subtext {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .uploaded-image-preview {
+            display: none;
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .uploaded-image-preview.active {
+            display: block;
+        }
+
+        .uploaded-image-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .uploaded-image-title {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .remove-upload-btn {
+            padding: 4px 8px;
+            background: #ff5f57;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .remove-upload-btn:hover {
+            background: #ff3333;
+        }
+
+        .uploaded-image-thumb {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 4px;
+            background: white;
+        }
+
+        /* [追加] 画像編集モードの説明 */
+        .edit-mode-info {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #e65100;
+            display: none;
+        }
+
+        .edit-mode-info.active {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="sidebar" id="sidebar">
-        <div class="history">
-            <div class="history-header">
-                <h2 class="history-title">History</h2>
-                <button class="clear-history-btn" onclick="clearHistory()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Clear
-                </button>
-            </div>
-            <div id="historyContainer">
-                <div class="history-grid">
-                    </div>
-            </div>
+    <!-- [追加] サイドバー -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">History</div>
+            <div class="generation-counter" id="generationCounter">0 images generated</div>
         </div>
-    </div>
+        <div class="history-container" id="historyContainer">
+            <div class="history-empty">No images yet</div>
+        </div>
+    </aside>
+
+    <!-- [追加] サイドバーオーバーレイ (モバイル用) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="container">
         <div class="title-bar">
-            <button class="sidebar-toggle" onclick="toggleSidebar()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
-            
             <div class="window-controls">
                 <div class="window-control control-close"></div>
                 <div class="window-control control-minimize"></div>
                 <div class="window-control control-maximize"></div>
             </div>
-            <h1>magi2</h1>
+            <h1>magi2 - Image Generator</h1>
+            <!-- [追加] ハンバーガーメニュー -->
+            <button class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
-
+        
         <div class="content">
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-label">Generated</div>
-                    <div class="stat-value" id="generationCount">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Cost</div>
-                    <div class="stat-value" id="costDisplay">$0.00 / ¥0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">History</div>
-                    <div class="stat-value" id="historyCount">0</div>
-                </div>
-            </div>
-
             <div class="input-group">
                 <label for="prompt">Prompt</label>
-                <textarea id="prompt" placeholder="Enter your image prompt here..."></textarea>
+                <textarea 
+                    id="prompt" 
+                    placeholder="Describe what you want to create..."
+                ></textarea>
             </div>
 
             <div class="input-group">
                 <label for="styleMode">Style Mode</label>
                 <select id="styleMode">
                     <option value="default">Default</option>
-                    <option value="capa">Capa (B&W Photojournalism)</option>
+                    <option value="capa">Capa (Monochrome Documentary)</option>
                     <option value="mummy">Mummy (90s Snapshot)</option>
-                    <option value="pri">Pri (Purikura)</option>
-                    <option value="pro">Pro (Experimental)</option>
-                    <option value="edit">Edit (Image Editing)</option>
+                    <option value="pri">Pri (Purikura Style)</option>
+                    <option value="pro">Pro (Advanced)</option>
+                    <option value="edit">Edit (Image-to-Image)</option>
                 </select>
             </div>
 
-            <div class="input-group" id="imageUploadArea" style="display: none;">
-                <label for="imageUpload">Input Image (for Edit mode)</label>
-                <div class="upload-container">
-                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-                    <button type="button" class="upload-button" onclick="document.getElementById('imageUpload').click()" style="padding: 8px 16px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Choose Image
-                    </button>
-                    <div id="uploadedImagePreview" style="display: none; margin-top: 10px;">
-                        <img id="previewImg" style="max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #ddd;">
-                        <button type="button" onclick="removeUploadedImage()" style="margin-left: 10px; padding: 4px 8px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
-                    </div>
-                </div>
+            <!-- [追加] Edit Mode用の情報とアップロードエリア -->
+            <div class="edit-mode-info" id="editModeInfo">
+                Upload an image and describe the edits you want to make.
             </div>
 
+            <div class="upload-area" id="uploadArea" style="display: none;">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <div class="upload-text">Click to upload or drag & drop</div>
+                <div class="upload-subtext">PNG, JPG up to 10MB</div>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            </div>
 
+            <div class="uploaded-image-preview" id="uploadedImagePreview">
+                <div class="uploaded-image-header">
+                    <span class="uploaded-image-title">Uploaded Image</span>
+                    <button class="remove-upload-btn" onclick="removeUploadedImage()">Remove</button>
+                </div>
+                <img class="uploaded-image-thumb" id="uploadedImageThumb" alt="Uploaded image">
+            </div>
 
             <div class="button-group">
-                <button id="generateBtn" class="primary" onclick="generateImage()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                <button class="primary" id="generateBtn" onclick="generateImage()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                     Generate
                 </button>
             </div>
 
-            <div id="error" class="error">
-                <span id="errorText"></span>
-            </div>
-
-            <div id="loading" class="loading">
+            <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div class="loading-text">Generating image...</div>
             </div>
 
-            <div id="result" class="result">
-                <div class="image-container">
-                    <div class="image-header">
-                        <span class="image-title">Generated Image</span>
-                        <button class="close-btn" onclick="closeImage()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <img id="generatedImage" alt="Generated image" onclick="enlargeImage(this.src)">
-                    <div class="image-actions">
-                        <button onclick="downloadImage()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download
-                        </button>
-                    </div>
+            <div class="error" id="error">
+                <span id="errorText"></span>
+            </div>
+
+            <div class="result" id="result">
+                <img id="generatedImage" alt="Generated image">
+                
+                <!-- [追加] 翻訳後プロンプトの表示 -->
+                <div class="prompt-display" id="promptDisplay" style="display: none;">
+                    <div class="prompt-display-label">Translated/Final Prompt</div>
+                    <div class="prompt-display-text" id="finalPromptText"></div>
                 </div>
-                <div id="seedDisplay" class="seed-display">
-                    <span class="seed-label">Seed:</span>
-                    <span class="seed-value" id="seedValue">-</span>
+
+                <div class="seed-display" id="seedDisplay">
+                    <div class="seed-info">
+                        <span class="seed-label">Seed:</span>
+                        <span class="seed-value" id="seedValue"></span>
+                    </div>
                     <button class="seed-copy-btn" onclick="copySeed()">Copy</button>
                 </div>
-                <div id="saveStatus" class="save-status"></div>
+                
+                <div class="save-status" id="saveStatus"></div>
+                
+                <button onclick="closeImage()">Close</button>
             </div>
-
-            </div>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-
-    <div id="imageModal" class="modal" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-            <img id="modalImage" class="modal-image" alt="Enlarged image">
         </div>
     </div>
 
-   <script>
-        const STORAGE_KEY = 'imagen_history';
-        const COUNT_KEY = 'generation_count';
-        const COST_PER_IMAGE = 0.04; // $0.04 per image
-        const USD_TO_JPY = 150; // 1 USD = 150 JPY (adjust as needed)
-        let history = [];
+    <script>
+        // グローバル変数
         let currentSeed = null;
-        
-        // [追加] 編集モード用の画像アップロード変数
         let uploadedImageBase64 = null;
+        let history = [];
+        let generationCount = 0;
+        let currentOriginalPrompt = null;  // [追加] 元のプロンプトを保存
+        let currentFinalPrompt = null;     // [追加] 翻訳後のプロンプトを保存
 
-        // Initialize
-        window.addEventListener('DOMContentLoaded', function() {
-            loadHistory();
-            loadGenerationCount();
-
-            // [修正] DOMが読み込まれた後でイベントリスナーを設定
-            
-            // モード切り替え時の処理
-            document.getElementById('styleMode').addEventListener('change', function(e) {
-                const uploadArea = document.getElementById('imageUploadArea');
-                if (e.target.value === 'edit') {
-                    uploadArea.style.display = 'block';
-                } else {
-                    uploadArea.style.display = 'none';
-                }
-            });
-
-            // 画像アップロード処理
-            document.getElementById('imageUpload').addEventListener('change', async function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file.');
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const base64 = event.target.result.split(',')[1];
-                    uploadedImageBase64 = base64;
-                    
-                    // プレビュー表示
-                    const preview = document.getElementById('uploadedImagePreview');
-                    const img = document.getElementById('previewImg');
-                    img.src = event.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            });
-
-            // Enter to generate (Shift+Enter for new line)
-            document.getElementById('prompt').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    generateImage();
-                }
-            });
-        });
-
+        // LocalStorageから履歴を読み込む
         function loadHistory() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                history = JSON.parse(stored);
+            const saved = localStorage.getItem('imageHistory');
+            if (saved) {
+                history = JSON.parse(saved);
                 updateHistoryDisplay();
             }
         }
 
-        function saveHistory() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-            updateHistoryDisplay();
-        }
-
+        // LocalStorageから生成カウントを読み込む
         function loadGenerationCount() {
-            const count = localStorage.getItem(COUNT_KEY);
-            const countValue = parseInt(count || '0');
-            document.getElementById('generationCount').textContent = countValue;
-            updateCostDisplay(countValue);
+            const saved = localStorage.getItem('generationCount');
+            if (saved) {
+                generationCount = parseInt(saved);
+                updateGenerationCounter();
+            }
         }
 
-        function incrementGenerationCount() {
-            const count = parseInt(localStorage.getItem(COUNT_KEY) || '0') + 1;
-            localStorage.setItem(COUNT_KEY, count.toString());
-            document.getElementById('generationCount').textContent = count;
-            updateCostDisplay(count);
-        }
-
-        function updateCostDisplay(count) {
-            const costUSD = (count * COST_PER_IMAGE).toFixed(2);
-            const costJPY = Math.round(count * COST_PER_IMAGE * USD_TO_JPY);
-            document.getElementById('costDisplay').textContent = `$${costUSD} / ¥${costJPY}`;
-        }
-
-        function generateRandomSeed() {
-            return Math.floor(Math.random() * 2147483647);
-        }
-
-        function downloadImage() {
-            const img = document.getElementById('generatedImage');
-            const link = document.createElement('a');
-            link.href = img.src;
-            link.download = `imagen_${Date.now()}.png`;
-            link.click();
-        }
-
-        // [修正] サイドバー関数を enlargeImage より先に定義
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
-        }
-
-        function closeSidebar() {
-            document.getElementById('sidebar').classList.remove('active');
-            document.getElementById('overlay').classList.remove('active');
-        }
-
-        function enlargeImage(src) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modal.classList.add('active');
-            modalImg.src = src;
-            closeSidebar(); // [追加] サイドバーを閉じる
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.remove('active');
-        }
-
-        // [修正] fullImageUrl を引数に追加
-        function addToHistory(prompt, thumbnailUrl, seed, fullImageUrl) {
-            const item = {
+        // [修正] 履歴に追加（originalPromptも保存）
+        function addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl) {
+            const historyItem = {
                 id: Date.now(),
-                prompt: prompt,
+                originalPrompt: originalPrompt,  // [追加]
+                finalPrompt: finalPrompt,        // [変更] prompt → finalPrompt
                 thumbnailUrl: thumbnailUrl,
-                fullImageUrl: fullImageUrl, // [追加] 高解像度URL
+                fullImageUrl: fullImageUrl || thumbnailUrl,
                 seed: seed,
                 timestamp: new Date().toISOString()
             };
-
-            history.unshift(item);
-
+            
+            history.unshift(historyItem);
+            
+            // 最大50件まで保存
             if (history.length > 50) {
                 history = history.slice(0, 50);
             }
-
-            saveHistory();
-        }
-
-        function clearHistory() {
-            if (confirm('Are you sure you want to clear all history?')) {
-                history = [];
-                localStorage.removeItem(STORAGE_KEY);
-                updateHistoryDisplay();
-            }
-        }
-
-        function updateHistoryDisplay() {
-            // [変更] 履歴グリッドのコンテナを正しくターゲットする
-            const gridContainer = document.querySelector('#historyContainer .history-grid');
-            const countElement = document.getElementById('historyCount');
             
-            if (!gridContainer) return; // コンテナがなければ何もしない
+            localStorage.setItem('imageHistory', JSON.stringify(history));
+            updateHistoryDisplay();
+        }
 
-            countElement.textContent = history.length;
-
+        // 履歴表示を更新
+        function updateHistoryDisplay() {
+            const container = document.getElementById('historyContainer');
+            
             if (history.length === 0) {
-                gridContainer.innerHTML = '<div class="history-empty">No generation history yet</div>';
+                container.innerHTML = '<div class="history-empty">No images yet</div>';
                 return;
             }
-
-            gridContainer.innerHTML = history.map(item => `
+            
+            container.innerHTML = history.map(item => `
                 <div class="history-item">
-                    <img src="${item.thumbnailUrl}" alt="${escapeHtml(item.prompt)}" class="history-thumbnail" 
-                         onclick="enlargeImage('${item.fullImageUrl || item.thumbnailUrl}')">
-                    <div class="history-info">
-                        <div class="history-prompt">${escapeHtml(item.prompt)}</div>
-                        <div class="history-meta">
-                            <span>${formatDate(item.timestamp)}</span>
-                        </div>
+                    <img 
+                        class="history-thumbnail" 
+                        src="${item.thumbnailUrl}"
+                        alt="Generated image"
+                        onclick="viewFullImage('${item.fullImageUrl || item.thumbnailUrl}')"
+                    >
+                    <div class="history-prompt">${escapeHtml(item.originalPrompt || item.finalPrompt)}</div>
+                    <div class="history-meta">
+                        <div class="history-time">${formatDate(item.timestamp)}</div>
                         <div class="history-actions">
-                            <button class="history-btn" onclick="regenerateFromHistory(${item.id})">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                </svg>
-                                Regen
-                            </button>
-                            <button class="history-btn" onclick="variationFromHistory(${item.id})">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="1"></circle>
-                                    <circle cx="19" cy="12" r="1"></circle>
-                                    <circle cx="5" cy="12" r="1"></circle>
-                                </svg>
-                                Vary
-                            </button>
+                            <button class="history-action-btn" onclick="regenerateFromHistory('${item.id}')">Regenerate</button>
+                            <button class="history-action-btn" onclick="variationFromHistory('${item.id}')">Variation</button>
                         </div>
                     </div>
                 </div>
             `).join('');
         }
 
+        // 生成カウントを増やす
+        function incrementGenerationCount() {
+            generationCount++;
+            localStorage.setItem('generationCount', generationCount.toString());
+            updateGenerationCounter();
+        }
+
+        // 生成カウンター表示を更新
+        function updateGenerationCounter() {
+            const counter = document.getElementById('generationCounter');
+            counter.textContent = `${generationCount} images generated`;
+        }
+
+        // フルサイズ画像を表示
+        function viewFullImage(url) {
+            window.open(url, '_blank');
+        }
+
+        // Seedをランダム生成
+        function generateRandomSeed() {
+            return Math.floor(Math.random() * 1000000000);
+        }
+
+        // HTMLエスケープ
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -1031,18 +896,18 @@
         }
 
         function regenerateFromHistory(id) {
-            const item = history.find(h => h.id === id);
+            const item = history.find(h => h.id === parseInt(id));
             if (!item) return;
 
-            document.getElementById('prompt').value = item.prompt;
+            document.getElementById('prompt').value = item.originalPrompt || item.finalPrompt;
             generateImage();
         }
 
         function variationFromHistory(id) {
-            const item = history.find(h => h.id === id);
+            const item = history.find(h => h.id === parseInt(id));
             if (!item) return;
 
-            document.getElementById('prompt').value = item.prompt;
+            document.getElementById('prompt').value = item.originalPrompt || item.finalPrompt;
             generateImage();
         }
 
@@ -1060,10 +925,10 @@
         function removeUploadedImage() {
             uploadedImageBase64 = null;
             document.getElementById('imageUpload').value = '';
-            document.getElementById('uploadedImagePreview').style.display = 'none';
+            document.getElementById('uploadedImagePreview').classList.remove('active');
         }
 
-async function generateImage() {
+        async function generateImage() {
             const prompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
             
@@ -1108,7 +973,7 @@ async function generateImage() {
                 loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-            closeSidebar(); // [追加] 生成開始時にサイドバーを閉じる
+            closeSidebar(); // 生成開始時にサイドバーを閉じる
 
             try {
                 // Generate image via Cloudflare Pages Functions
@@ -1154,12 +1019,22 @@ async function generateImage() {
                 document.getElementById('seedValue').textContent = currentSeed;
                 seedDisplay.classList.add('active');
 
+                // [追加] プロンプトを保存
+                currentOriginalPrompt = data.originalPrompt || prompt;
+                currentFinalPrompt = data.finalPrompt || prompt;
+
+                // [追加] 翻訳後プロンプトを表示（元のプロンプトと異なる場合のみ）
+                if (currentFinalPrompt !== currentOriginalPrompt) {
+                    document.getElementById('finalPromptText').textContent = currentFinalPrompt;
+                    document.getElementById('promptDisplay').style.display = 'block';
+                } else {
+                    document.getElementById('promptDisplay').style.display = 'none';
+                }
+
                 incrementGenerationCount();
 
-                const promptToSave = data.finalPrompt || prompt;
-
                 // Save to Google Drive via Cloudflare proxy
-                saveToGoogleDrive(promptToSave, data.base64Image, currentSeed);
+                saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image, currentSeed);
 
             } catch (err) {
                 errorText.textContent = err.message;
@@ -1171,7 +1046,8 @@ async function generateImage() {
             }
         }
 
-        async function saveToGoogleDrive(prompt, base64Image, seed) {
+        // [修正] saveToGoogleDrive関数を更新
+        async function saveToGoogleDrive(originalPrompt, finalPrompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
             try {
@@ -1192,7 +1068,8 @@ async function generateImage() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        prompt: prompt,
+                        originalPrompt: originalPrompt,  // [修正]
+                        finalPrompt: finalPrompt,        // [修正]
                         base64Image: base64Image,
                         seed: seed,
                         timestamp: new Date().toISOString()
@@ -1201,7 +1078,7 @@ async function generateImage() {
 
                 const result = await response.json();
 
-                // [修正] サムネイルと高解像度URLを両方取得
+                // サムネイルと高解像度URLを両方取得
                 const thumbnailUrl = result.thumbnailUrl;
                 const fullImageUrl = result.fullImageUrl;
                 
@@ -1214,8 +1091,8 @@ async function generateImage() {
                     `;
                     saveStatus.className = 'save-status success';
 
-                    // [修正] 両方のURLを履歴に追加
-                    addToHistory(prompt, thumbnailUrl, seed, fullImageUrl);
+                    // 両方のURLを履歴に追加
+                    addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl);
 
                 } else {
                     throw new Error(result.error || 'Save failed - image URL missing');
@@ -1241,6 +1118,109 @@ async function generateImage() {
             result.classList.remove('active');
             saveStatus.className = 'save-status';
             seedDisplay.classList.remove('active');
+        }
+
+        // サイドバートグル
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuToggle = document.getElementById('menuToggle');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const menuToggle = document.getElementById('menuToggle');
+            
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            menuToggle.classList.remove('active');
+        }
+
+        // イベントリスナー設定
+        document.addEventListener('DOMContentLoaded', function() {
+            // ハンバーガーメニュー
+            document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+            // Style Mode変更時の処理
+            document.getElementById('styleMode').addEventListener('change', function(e) {
+                const uploadArea = document.getElementById('uploadArea');
+                const editModeInfo = document.getElementById('editModeInfo');
+                
+                if (e.target.value === 'edit') {
+                    uploadArea.style.display = 'block';
+                    editModeInfo.classList.add('active');
+                } else {
+                    uploadArea.style.display = 'none';
+                    editModeInfo.classList.remove('active');
+                }
+            });
+
+            // ファイルアップロード
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('imageUpload');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // ドラッグ&ドロップ
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileUpload({ target: { files: [files[0]] } });
+                }
+            });
+
+            // 履歴と生成カウントを読み込む
+            loadHistory();
+            loadGenerationCount();
+        });
+
+        // ファイルアップロード処理
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // ファイルサイズチェック (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+            
+            // ファイルタイプチェック
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result.split(',')[1];
+                uploadedImageBase64 = base64;
+                
+                // プレビュー表示
+                document.getElementById('uploadedImageThumb').src = e.target.result;
+                document.getElementById('uploadedImagePreview').classList.add('active');
+            };
+            reader.readAsDataURL(file);
         }
     </script>
 </body>
