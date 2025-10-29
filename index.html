@@ -809,18 +809,65 @@
         </div>
     </div>
 
-    <script>
+   <script>
         const STORAGE_KEY = 'imagen_history';
         const COUNT_KEY = 'generation_count';
         const COST_PER_IMAGE = 0.04; // $0.04 per image
         const USD_TO_JPY = 150; // 1 USD = 150 JPY (adjust as needed)
         let history = [];
         let currentSeed = null;
+        
+        // [追加] 編集モード用の画像アップロード変数
+        let uploadedImageBase64 = null;
 
         // Initialize
         window.addEventListener('DOMContentLoaded', function() {
             loadHistory();
             loadGenerationCount();
+
+            // [修正] DOMが読み込まれた後でイベントリスナーを設定
+            
+            // モード切り替え時の処理
+            document.getElementById('styleMode').addEventListener('change', function(e) {
+                const uploadArea = document.getElementById('imageUploadArea');
+                if (e.target.value === 'edit') {
+                    uploadArea.style.display = 'block';
+                } else {
+                    uploadArea.style.display = 'none';
+                }
+            });
+
+            // 画像アップロード処理
+            document.getElementById('imageUpload').addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64 = event.target.result.split(',')[1];
+                    uploadedImageBase64 = base64;
+                    
+                    // プレビュー表示
+                    const preview = document.getElementById('uploadedImagePreview');
+                    const img = document.getElementById('previewImg');
+                    img.src = event.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Enter to generate (Shift+Enter for new line)
+            document.getElementById('prompt').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    generateImage();
+                }
+            });
         });
 
         function loadHistory() {
@@ -866,6 +913,17 @@
             link.href = img.src;
             link.download = `imagen_${Date.now()}.png`;
             link.click();
+        }
+
+        // [修正] サイドバー関数を enlargeImage より先に定義
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
         }
 
         function enlargeImage(src) {
@@ -997,45 +1055,7 @@
                 setTimeout(() => btn.textContent = originalText, 1500);
             });
         }
-
         
-        // [追加] 編集モード用の画像アップロード変数
-        let uploadedImageBase64 = null;
-
-        // モード切り替え時の処理
-        document.getElementById('styleMode').addEventListener('change', function(e) {
-            const uploadArea = document.getElementById('imageUploadArea');
-            if (e.target.value === 'edit') {
-                uploadArea.style.display = 'block';
-            } else {
-                uploadArea.style.display = 'none';
-            }
-        });
-
-        // 画像アップロード処理
-        document.getElementById('imageUpload').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                alert('Please select an image file.');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const base64 = event.target.result.split(',')[1];
-                uploadedImageBase64 = base64;
-                
-                // プレビュー表示
-                const preview = document.getElementById('uploadedImagePreview');
-                const img = document.getElementById('previewImg');
-                img.src = event.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        });
-
         // アップロード画像削除
         function removeUploadedImage() {
             uploadedImageBase64 = null;
@@ -1088,4 +1108,138 @@ async function generateImage() {
                 loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-            closeSidebar(); // [追加] 生成開始時にサイドバーを
+            closeSidebar(); // [追加] 生成開始時にサイドバーを閉じる
+
+            try {
+                // Generate image via Cloudflare Pages Functions
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify((function() {
+                        const requestBody = {
+                            prompt: prompt,
+                            mode: mode
+                        };
+                        // 編集モードの場合、入力画像を追加
+                        if (mode === 'edit') {
+                            requestBody.inputImage = uploadedImageBase64;
+                        }
+                        return requestBody;
+                    })()),
+                });
+
+                loadingText.textContent = 'Generating image...';
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    console.error('API Error:', data);
+                    const errorMsg = data.error || 'Failed to generate image.';
+                    let details = '';
+                    if (data.geminiError) {
+                         details = `API Error: ${JSON.stringify(data.geminiError)}`;
+                    }
+                    if (data.proTranslateError) {
+                        details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
+                    }
+                    throw new Error(`${errorMsg} ${details}`);
+                }
+
+                const img = document.getElementById('generatedImage');
+                img.src = `data:image/png;base64,${data.base64Image}`;
+                result.classList.add('active');
+
+                document.getElementById('seedValue').textContent = currentSeed;
+                seedDisplay.classList.add('active');
+
+                incrementGenerationCount();
+
+                const promptToSave = data.finalPrompt || prompt;
+
+                // Save to Google Drive via Cloudflare proxy
+                saveToGoogleDrive(promptToSave, data.base64Image, currentSeed);
+
+            } catch (err) {
+                errorText.textContent = err.message;
+                error.classList.add('active');
+            } finally {
+                generateBtn.disabled = false;
+                loading.classList.remove('active');
+                loadingText.textContent = 'Generating image...';
+            }
+        }
+
+        async function saveToGoogleDrive(prompt, base64Image, seed) {
+            const saveStatus = document.getElementById('saveStatus');
+            
+            try {
+                saveStatus.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Saving to Google Drive...
+                `;
+                saveStatus.className = 'save-status';
+                saveStatus.style.display = 'flex';
+
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        base64Image: base64Image,
+                        seed: seed,
+                        timestamp: new Date().toISOString()
+                    }),
+                });
+
+                const result = await response.json();
+
+                // [修正] サムネイルと高解像度URLを両方取得
+                const thumbnailUrl = result.thumbnailUrl;
+                const fullImageUrl = result.fullImageUrl;
+                
+                if (result.success && thumbnailUrl && fullImageUrl) {
+                    saveStatus.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Saved to Google Drive
+                    `;
+                    saveStatus.className = 'save-status success';
+
+                    // [修正] 両方のURLを履歴に追加
+                    addToHistory(prompt, thumbnailUrl, seed, fullImageUrl);
+
+                } else {
+                    throw new Error(result.error || 'Save failed - image URL missing');
+                }
+
+            } catch (err) {
+                saveStatus.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    ${err.message}
+                `;
+                saveStatus.className = 'save-status error';
+            }
+        }
+
+        function closeImage() {
+            const result = document.getElementById('result');
+            const saveStatus = document.getElementById('saveStatus');
+            const seedDisplay = document.getElementById('seedDisplay');
+            result.classList.remove('active');
+            saveStatus.className = 'save-status';
+            seedDisplay.classList.remove('active');
+        }
+    </script>
