@@ -1,7 +1,6 @@
 // functions/api/generate.js
 // Cloudflare Pages Functions for Imagen 3.0 API & Gemini Flash Preview Image
-// [変更] 編集モード（Gemini 2.5 Flash Preview Image）を追加
-// [変更] プロンプト自動翻訳機能を追加
+// [変更] 'translate' アクションと 'generate' アクションを分離
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -250,50 +249,131 @@ Translated English Prompt:
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // [修正] prompt を originalInputPrompt として受け取る
-        const { prompt: originalInputPrompt, mode, inputImage } = await request.json();
+        // [修正] action と originalPromptFromClient を受け取る
+        const { 
+            prompt,           // メインのプロンプト (翻訳前 or 翻訳/編集済み)
+            originalPrompt: originalPromptFromClient, // 翻訳前のプロンプト (generate時のみ)
+            mode, 
+            inputImage, 
+            action            // 'translate' or 'generate'
+        } = await request.json();
+        
         const API_KEY = env.GEMINI_API_KEY;
         const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; 
 
-        if (!originalInputPrompt) {
+        if (!prompt) {
             return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
 
-        // [追加] 編集モードの処理
-        if (mode === 'edit') {
-            if (!inputImage) {
-                // ... (エラーハンドリングはそのまま) ...
-            }
-            if (!API_KEY_EDIT) {
-                // ... (エラーハンドリングはそのまま) ...
-            }
-             if (!API_KEY) {
+        // --- [追加] 翻訳アクション (Translateボタン) ---
+        if (action === 'translate') {
+            if (!API_KEY) {
                  return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。翻訳に必要です。' }), {
                     status: 500,
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
 
-            // [追加] 編集指示プロンプトの翻訳
-            let translatedEditPrompt = originalInputPrompt;
             try {
-                const isEng = await isEnglish(originalInputPrompt, API_KEY);
-                if (!isEng) {
-                    translatedEditPrompt = await translateToEnglish(originalInputPrompt, API_KEY);
+                let originalPromptForTranslate = prompt;
+                let translatedPrompt = prompt;
+                let finalPrompt = prompt;
+
+                // Step 1: 翻訳 (Proモード以外)
+                // Proモードは translateProPrompt が翻訳も兼ねるため、ここでは実行しない
+                if (mode !== 'pro') {
+                    const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
+                    if (!isEng) {
+                        translatedPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
+                    }
+                    // 英語の場合は translatedPrompt = originalPrompt のまま
                 }
-            } catch (translateError) {
-                console.error('Edit prompt translation failed:', translateError.message);
-                // 翻訳に失敗しても、元のプロンプトで続行
-                translatedEditPrompt = originalInputPrompt;
+                
+                // Step 2: モード別処理 (編集モードの翻訳も含む)
+                switch (mode) {
+                    case 'edit':
+                        // 編集モードの翻訳 (Pro最適化はしない)
+                        let translatedEditPrompt = originalPromptForTranslate;
+                        const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
+                        if (!isEng) {
+                            translatedEditPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
+                        }
+                        finalPrompt = translatedEditPrompt;
+                        break;
+                    case 'capa':
+                        finalPrompt = `${translatedPrompt}, monochrome, high contrast, grainy film photo, 35mm, photojournalism style inspired by Robert Capa, dramatic shadows`;
+                        break;
+                    case 'mummy':
+                        finalPrompt = `${translatedPrompt}, snapshot photo from the Heisei era, 1990s Japanese film photo, slight motion blur, date stamp in bottom right corner, taken by a mom with a point-and-shoot camera, slightly faded colors`;
+                        break;
+                    case 'pri':
+                        finalPrompt = `${translatedPrompt}, Japanese Purikura style, bright high-key lighting, cute stickers and sparkles overlay, animated glitter text, big cartoon eyes, smooth flawless skin, decorated border, peace sign pose`;
+                        break;
+                    case 'pro':
+                        // Proモードは元のプロンプト(originalPromptForTranslate)を直接最適化関数に渡す
+                        finalPrompt = await translateProPrompt(originalPromptForTranslate, API_KEY);
+                        break;
+                    case 'default':
+                    default:
+                        finalPrompt = translatedPrompt;
+                        break;
+                }
+                
+                return new Response(JSON.stringify({ 
+                    success: true, 
+                    translatedPrompt: finalPrompt 
+                }), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200,
+                });
+
+            } catch (processingError) {
+                return new Response(JSON.stringify({
+                    error: 'プロンプトの翻訳・処理に失敗しました。',
+                    processingError: processingError.message
+                }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+
+        // --- [修正] 生成アクション (Generateボタン) ---
+        
+        // [修正] prompt を finalPrompt として、originalPromptFromClient を originalPrompt として扱う
+        const finalPrompt = prompt;
+        const originalPrompt = originalPromptFromClient || finalPrompt;
+
+        // [修正] 編集モードの処理
+        if (mode === 'edit') {
+            if (!inputImage) {
+                 return new Response(JSON.stringify({ error: '編集モードには画像が必要です。' }), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            if (!API_KEY_EDIT) {
+                 return new Response(JSON.stringify({ error: '編集用APIキー(GEMINI_API_KEY_EDIT)が設定されていません。' }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+             if (!API_KEY) {
+                 return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。' }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
             }
 
+            // [削除] 編集指示プロンプトの翻訳ロジック (action: 'translate' で実行済みの想定)
+            
             try {
                 // Step 1: Gemini Flashで画像を解析して、編集用プロンプトを生成
-                // [修正] 翻訳後の編集指示(translatedEditPrompt)を渡す
-                const analysisResult = await editImageWithGemini(translatedEditPrompt, inputImage, API_KEY_EDIT);
+                // [修正] finalPrompt (翻訳/編集済みのプロンプト) を渡す
+                const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
                 
                 // Step 2: 生成されたプロンプトでImagen APIを使用して新しい画像を生成
                 // ... (Imagen API 呼び出しはそのまま) ...
@@ -332,16 +412,22 @@ export async function onRequestPost({ request, env }) {
                         base64Image: base64Image,
                         success: true,
                         finalPrompt: analysisResult.editedPrompt,
-                        originalPrompt: originalInputPrompt, // [追加] ユーザーが入力した元のプロンプト
+                        originalPrompt: originalPrompt, // [修正] クライアントから受け取った原文
                         mode: 'edit'
                     }), {
                         headers: { 'Content-Type': 'application/json' },
                         status: 200,
                     });
                 }
-                // ... (エラーハンドリングはそのまま) ...
+                 throw new Error('編集画像の生成に失敗しました。');
             } catch (editError) {
-                // ... (エラーハンドリングはそのまま) ...
+                 return new Response(JSON.stringify({
+                    error: '画像編集処理中にエラーが発生しました。',
+                    editError: editError.message
+                }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
             }
         }
 
@@ -353,53 +439,7 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // [ここから変更] 翻訳処理
-        let originalPrompt = originalInputPrompt;
-        let translatedPrompt = originalInputPrompt;
-        let finalPrompt = originalInputPrompt;
-
-        try {
-            // Step 1: 翻訳 (Proモード以外)
-            // Proモードは translateProPrompt が翻訳も兼ねるため、ここでは実行しない
-            if (mode !== 'pro') {
-                const isEng = await isEnglish(originalPrompt, API_KEY);
-                if (!isEng) {
-                    translatedPrompt = await translateToEnglish(originalPrompt, API_KEY);
-                }
-                // 英語の場合は translatedPrompt = originalPrompt のまま
-            }
-            
-            // Step 2: モード別処理
-            switch (mode) {
-                case 'capa':
-                    finalPrompt = `${translatedPrompt}, monochrome, high contrast, grainy film photo, 35mm, photojournalism style inspired by Robert Capa, dramatic shadows`;
-                    break;
-                case 'mummy':
-                    finalPrompt = `${translatedPrompt}, snapshot photo from the Heisei era, 1990s Japanese film photo, slight motion blur, date stamp in bottom right corner, taken by a mom with a point-and-shoot camera, slightly faded colors`;
-                    break;
-                case 'pri':
-                    finalPrompt = `${translatedPrompt}, Japanese Purikura style, bright high-key lighting, cute stickers and sparkles overlay, animated glitter text, big cartoon eyes, smooth flawless skin, decorated border, peace sign pose`;
-                    break;
-                case 'pro':
-                    // Proモードは元のプロンプト(originalPrompt)を直接最適化関数に渡す
-                    finalPrompt = await translateProPrompt(originalPrompt, API_KEY);
-                    break;
-                case 'default':
-                default:
-                    finalPrompt = translatedPrompt;
-                    break;
-            }
-        } catch (processingError) {
-            return new Response(JSON.stringify({
-                error: 'プロンプトの処理に失敗しました。',
-                processingError: processingError.message
-            }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-        // [ここまで変更]
-
+        // [削除] 翻訳処理 (action: 'translate' で実行済みの想定)
         
         // 正しいImagen 3.0のエンドポイント
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
@@ -440,7 +480,7 @@ export async function onRequestPost({ request, env }) {
                 base64Image: base64Image,
                 success: true,
                 finalPrompt: finalPrompt,
-                originalPrompt: originalPrompt // [追加]
+                originalPrompt: originalPrompt // [修正]
             }), {
                 headers: { 'Content-Type': 'application/json' },
                 status: 200,
