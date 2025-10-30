@@ -268,6 +268,20 @@
             to { transform: rotate(360deg); }
         }
 
+        /* [追加] 翻訳ボタンのスピナー用 */
+        .btn-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e0e0e0;
+            border-top-color: #666;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0;
+            display: inline-block; /* ボタン内でテキストと並べる */
+            vertical-align: middle;
+            margin-right: 6px; /* テキストとの間隔 */
+        }
+
         .loading-text {
             font-size: 13px;
             color: #666;
@@ -747,7 +761,6 @@
     </style>
 </head>
 <body>
-    <!-- [追加] サイドバー -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">History</div>
@@ -768,13 +781,10 @@
         </div>
     </aside>
 
-    <!-- [追加] サイドバーオーバーレイ (モバイル用) -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="container">
         <div class="title-bar">
-            <!-- Mac風ボタンを削除 -->
-            <!-- ハンバーガーメニューを左端に配置 -->
             <button class="menu-toggle" id="menuToggle">
                 <span></span>
                 <span></span>
@@ -805,7 +815,6 @@
                 </select>
             </div>
 
-            <!-- [追加] リトライ設定 -->
             <div class="input-group">
                 <label for="retryCount">Auto Retry on Error</label>
                 <div class="retry-settings">
@@ -828,7 +837,6 @@
                 </div>
             </div>
 
-            <!-- [追加] Edit Mode用の情報とアップロードエリア -->
             <div class="edit-mode-info" id="editModeInfo">
                 Upload an image and describe the edits you want to make.
             </div>
@@ -853,14 +861,22 @@
             </div>
 
             <div class="button-group">
+                <button id="translateBtn" onclick="translatePrompt()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12H3"></path>
+                        <path d="m18 15 3-3-3-3"></path>
+                        <path d="m6 9-3 3 3 3"></path>
+                    </svg>
+                    Translate
+                </button>
+                
                 <button class="primary" id="generateBtn" onclick="generateImage()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
                     Generate
                 </button>
-                <!-- [追加] 停止ボタン -->
-                <button class="danger" id="stopBtn" onclick="stopGeneration()" style="display: none;">
+                <button class="danger" id="stopBtn" onclick="stopGeneration()" style="display: none; flex: 1;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="6" y="6" width="12" height="12"></rect>
                     </svg>
@@ -881,7 +897,6 @@
             <div class="result" id="result">
                 <img id="generatedImage" alt="Generated image">
                 
-                <!-- [追加] 翻訳後プロンプトの表示 -->
                 <div class="prompt-display" id="promptDisplay" style="display: none;">
                     <div class="prompt-display-label">Translated/Final Prompt</div>
                     <div class="prompt-display-text" id="finalPromptText"></div>
@@ -908,14 +923,14 @@
         let uploadedImageBase64 = null;
         let history = [];
         let generationCount = 0;
-        let currentOriginalPrompt = null;  // [追加] 元のプロンプトを保存
-        let currentFinalPrompt = null;     // [追加] 翻訳後のプロンプトを保存
-        let lastEnterTime = 0;             // [追加] Enter2回押し検出用
-        const COST_PER_IMAGE = 0.04;       // [追加] 1枚あたりのコスト
-        const USD_TO_JPY = 150;            // [追加] 為替レート（適宜更新）
-        let isGenerating = false;          // [追加] 生成中フラグ
-        let shouldStop = false;            // [追加] 停止フラグ
-        let currentRetryCount = 0;         // [追加] 現在のリトライ回数
+        let currentOriginalPrompt = null;  // [修正] 翻訳前のプロンプトを一時保存
+        let currentFinalPrompt = null;     
+        let lastEnterTime = 0;             
+        const COST_PER_IMAGE = 0.04;       
+        const USD_TO_JPY = 150;            
+        let isGenerating = false;          
+        let shouldStop = false;            
+        let currentRetryCount = 0;         
 
         // LocalStorageから履歴を読み込む
         function loadHistory() {
@@ -1123,10 +1138,80 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        async function generateImage() {
-            const prompt = document.getElementById('prompt').value.trim();
+        /**
+         * [新設] 翻訳ボタンの処理
+         */
+        async function translatePrompt() {
+            const promptInput = document.getElementById('prompt');
+            const originalPrompt = promptInput.value.trim();
             const mode = document.getElementById('styleMode').value;
-            
+            const translateBtn = document.getElementById('translateBtn');
+            const error = document.getElementById('error');
+            const errorText = document.getElementById('errorText');
+
+            if (!originalPrompt) {
+                errorText.textContent = 'Please enter a prompt to translate.';
+                error.classList.add('active');
+                return;
+            }
+
+            error.classList.remove('active');
+            translateBtn.disabled = true;
+            // [修正] スピナーをボタンに追加
+            translateBtn.innerHTML = `
+                <div class="btn-spinner"></div>
+                Translating...
+            `;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: originalPrompt,
+                        mode: mode,
+                        action: 'translate' // 翻訳アクションを明示
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to translate prompt.');
+                }
+
+                if (data.success && data.translatedPrompt) {
+                    promptInput.value = data.translatedPrompt;
+                    currentOriginalPrompt = originalPrompt; // 翻訳元を保存
+                } else {
+                    throw new Error('Invalid response from translation API.');
+                }
+
+            } catch (err) {
+                errorText.textContent = err.message;
+                error.classList.add('active');
+            } finally {
+                translateBtn.disabled = false;
+                // [修正] ボタンのSVGアイコンを戻す
+                translateBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12H3"></path>
+                        <path d="m18 15 3-3-3-3"></path>
+                        <path d="m6 9-3 3 3 3"></path>
+                    </svg>
+                    Translate
+                `;
+            }
+        }
+
+        async function generateImage() {
+            // [修正] finalPromptとoriginalPromptを定義
+            const finalPrompt = document.getElementById('prompt').value.trim();
+            const mode = document.getElementById('styleMode').value;
+            // 翻訳ボタンが押されていれば原文、そうでなければ (手動編集 or 英語入力) finalPrompt
+            const originalPrompt = currentOriginalPrompt || finalPrompt; 
+            currentOriginalPrompt = null; // 生成実行時にリセット
+
             const generateBtn = document.getElementById('generateBtn');
             const stopBtn = document.getElementById('stopBtn');
             const loading = document.getElementById('loading');
@@ -1145,7 +1230,7 @@
             seedDisplay.classList.remove('active');
             document.getElementById('inputHint').classList.remove('visible'); // ヒントを非表示
 
-            if (!prompt) {
+            if (!finalPrompt) { // [修正] チェック対象を finalPrompt に
                 errorText.textContent = 'Please enter a prompt.';
                 error.classList.add('active');
                 return;
@@ -1193,10 +1278,13 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        // [修正] bodyに action: 'generate' と両方のプロンプトを渡す
                         body: JSON.stringify((function() {
                             const requestBody = {
-                                prompt: prompt,
-                                mode: mode
+                                prompt: finalPrompt,        // 翻訳/編集後のプロンプト
+                                originalPrompt: originalPrompt, // 翻訳前のプロンプト
+                                mode: mode,
+                                action: 'generate' // 生成アクションを明示
                             };
                             // 編集モードの場合、入力画像を追加
                             if (mode === 'edit') {
@@ -1233,9 +1321,9 @@
                     document.getElementById('seedValue').textContent = currentSeed;
                     seedDisplay.classList.add('active');
 
-                    // [追加] プロンプトを保存
-                    currentOriginalPrompt = data.originalPrompt || prompt;
-                    currentFinalPrompt = data.finalPrompt || prompt;
+                    // [修正] サーバーから返されたプロンプトを使用
+                    currentOriginalPrompt = data.originalPrompt || originalPrompt;
+                    currentFinalPrompt = data.finalPrompt || finalPrompt;
 
                     // [追加] 翻訳後プロンプトを表示（元のプロンプトと異なる場合のみ）
                     if (currentFinalPrompt !== currentOriginalPrompt) {
@@ -1388,6 +1476,11 @@
             // ハンバーガーメニュー
             document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
             document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+            // [追加] プロンプト欄が手動編集されたら、翻訳前の記憶をリセット
+            document.getElementById('prompt').addEventListener('input', () => {
+                currentOriginalPrompt = null; 
+            });
 
             // [追加] Enter2回押し検出
             document.getElementById('prompt').addEventListener('keydown', function(e) {
