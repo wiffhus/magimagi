@@ -1,12 +1,14 @@
 // functions/api/generate.js
 // Cloudflare Pages Functions for Imagen 3.0 API & Gemini Flash Preview Image
 // [変更] 'translate' アクションと 'generate' アクションを分離
+// [変更] 'generate' アクション時に APIキーローテーション (Cloudflare KV) を追加
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
  * (Proモード専用)
  */
 async function translateProPrompt(prompt, apiKey) {
+    // ... (この関数の中身は変更ありません) ...
     const flashApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     // 論文に基づいた「翻訳AI」への指示
@@ -142,8 +144,10 @@ async function editImageWithGemini(prompt, inputImage, apiKey) {
 
 /**
  * [追加] Gemini API（Flash）を呼び出して、テキストが英語かどうかを判定する
+ * ... (この関数は変更なし) ...
  */
 async function isEnglish(prompt, apiKey) {
+    // ... (関数の中身は変更なし) ...
     const flashApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const checkPrompt = `Is the following text primarily in English? Answer with only "Yes" or "No".\n\nText: "${prompt}"`;
 
@@ -175,7 +179,6 @@ async function isEnglish(prompt, apiKey) {
 
         const answer = result.candidates?.[0]?.content?.parts?.[0]?.text.trim().toLowerCase();
         
-        // "yes" が含まれていれば英語と判定
         return (answer && answer.includes('yes')); 
 
     } catch (error) {
@@ -187,8 +190,10 @@ async function isEnglish(prompt, apiKey) {
 
 /**
  * [追加] Gemini API（Flash）を呼び出して、テキストを英語の画像生成プロンプトに翻訳する
+ * ... (この関数は変更なし) ...
  */
 async function translateToEnglish(prompt, apiKey) {
+    // ... (関数の中身は変更なし) ...
     const flashApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const translatorPrompt = `
 You are an expert translator specializing in translating user prompts into high-quality, detailed English prompts for an image generation AI.
@@ -245,6 +250,42 @@ Translated English Prompt:
 
 
 /**
+ * [ここから変更点 1/2] 
+ * APIキーローテーション用のヘルパー関数を追加
+ */
+function getApiKeyByIndex(index, env) {
+    // ローテーション対象のキー名を順番に定義
+    const keyNames = [
+        'GEMINI_API_KEY',     // Index 0
+        'GEMINI_API_KEY_01',  // Index 1
+        'GEMINI_API_KEY_02',  // Index 2
+        'GEMINI_API_KEY_03',  // Index 3
+        'GEMINI_API_KEY_04',  // Index 4
+        'GEMINI_API_KEY_05',  // Index 5
+        'GEMINI_API_KEY_06',  // Index 6
+        'GEMINI_API_KEY_07',  // Index 7
+        'GEMINI_API_KEY_08',  // Index 8
+        'GEMINI_API_KEY_09',  // Index 9
+        'GEMINI_API_KEY_10'   // Index 10 (合計 11 keys)
+    ];
+    
+    // インデックスが範囲内か確認 (0〜10)
+    const safeIndex = index >= 0 && index < keyNames.length ? index : 0;
+    const keyName = keyNames[safeIndex];
+    
+    const apiKey = env[keyName];
+
+    if (!apiKey) {
+         // 環境変数にキーが設定されていなかった場合、警告を出しデフォルトキーを試す
+         console.error(`API Key ${keyName} (Index ${safeIndex}) is missing in environment variables. Falling back to default GEMINI_API_KEY.`);
+         return env['GEMINI_API_KEY'];
+    }
+    
+    return apiKey;
+}
+
+
+/**
  * 画像生成リクエストを処理するエントリポイント
  */
 export async function onRequestPost({ request, env }) {
@@ -258,8 +299,51 @@ export async function onRequestPost({ request, env }) {
             action            // 'translate' or 'generate'
         } = await request.json();
         
-        const API_KEY = env.GEMINI_API_KEY;
+        
+        // [ここから変更点 2/2] 
+        // API_KEY を let で宣言し、アクションに応じて設定する
+        let API_KEY; 
         const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; 
+
+        if (action === 'generate') {
+            // --- [追加] 画像生成時のみAPIキーローテーションを実行 ---
+            
+            // ステップ1で設定したKVバインディング名 (変数名)
+            const KV_NAMESPACE = env.KEY_STORE; 
+            const KV_KEY_NAME = 'CURRENT_API_INDEX'; // KVに保存するキー名
+            const TOTAL_KEYS = 11; // キーの総数 (GEMINI_API_KEY + 01〜10)
+
+            if (!KV_NAMESPACE) {
+                // KVがバインドされていない（設定ミス）の場合、警告を出しデフォルトキーを使用
+                console.warn('KV Namespace (KEY_STORE) is not bound. Falling back to GEMINI_API_KEY.');
+                API_KEY = env.GEMINI_API_KEY; 
+            } else {
+                try {
+                    // 1. KVから現在のインデックスを取得
+                    const currentIndexStr = await KV_NAMESPACE.get(KV_KEY_NAME);
+                    const currentIndex = parseInt(currentIndexStr, 10) || 0; // 取得できなければ0から開始
+
+                    // 2. 今回使用するAPIキーをヘルパー関数から取得
+                    API_KEY = getApiKeyByIndex(currentIndex, env);
+                    
+                    // 3. 次のインデックスを計算し、KVに保存 (エラー時もカウントを進めるため、先に更新)
+                    const nextIndex = (currentIndex + 1) % TOTAL_KEYS;
+                    await KV_NAMESPACE.put(KV_KEY_NAME, nextIndex.toString());
+
+                } catch (kvError) {
+                    console.error('KV Error during API key rotation:', kvError.message);
+                    API_KEY = env.GEMINI_API_KEY; // KVエラー時はフォールバック
+                }
+            }
+            // --- [ここまで] APIキーローテーション処理 ---
+
+        } else {
+            // 'translate' アクション (または他のアクション) の場合
+            // 常にデフォルトのAPIキーを使用
+            API_KEY = env.GEMINI_API_KEY;
+        }
+        // [変更ここまで]
+
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), {
@@ -278,24 +362,22 @@ export async function onRequestPost({ request, env }) {
             }
 
             try {
+                // ... (翻訳処理 L. 257-317 は変更なし) ...
                 let originalPromptForTranslate = prompt;
                 let translatedPrompt = prompt;
                 let finalPrompt = prompt;
 
                 // Step 1: 翻訳 (Proモード以外)
-                // Proモードは translateProPrompt が翻訳も兼ねるため、ここでは実行しない
                 if (mode !== 'pro') {
                     const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                     if (!isEng) {
                         translatedPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
                     }
-                    // 英語の場合は translatedPrompt = originalPrompt のまま
                 }
                 
-                // Step 2: モード別処理 (編集モードの翻訳も含む)
+                // Step 2: モード別処理
                 switch (mode) {
                     case 'edit':
-                        // 編集モードの翻訳 (Pro最適化はしない)
                         let translatedEditPrompt = originalPromptForTranslate;
                         const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                         if (!isEng) {
@@ -313,7 +395,6 @@ export async function onRequestPost({ request, env }) {
                         finalPrompt = `${translatedPrompt}, Japanese Purikura style, bright high-key lighting, cute stickers and sparkles overlay, animated glitter text, big cartoon eyes, smooth flawless skin, decorated border, peace sign pose`;
                         break;
                     case 'pro':
-                        // Proモードは元のプロンプト(originalPromptForTranslate)を直接最適化関数に渡す
                         finalPrompt = await translateProPrompt(originalPromptForTranslate, API_KEY);
                         break;
                     case 'default':
@@ -342,8 +423,8 @@ export async function onRequestPost({ request, env }) {
         }
 
         // --- [修正] 生成アクション (Generateボタン) ---
+        // (action === 'translate' 以外は、生成アクションとして扱われる)
         
-        // [修正] prompt を finalPrompt として、originalPromptFromClient を originalPrompt として扱う
         const finalPrompt = prompt;
         const originalPrompt = originalPromptFromClient || finalPrompt;
 
@@ -361,6 +442,7 @@ export async function onRequestPost({ request, env }) {
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
+            // [修正] API_KEY がローテーションで取得できているかチェック
              if (!API_KEY) {
                  return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。' }), {
                     status: 500,
@@ -368,15 +450,13 @@ export async function onRequestPost({ request, env }) {
                 });
             }
 
-            // [削除] 編集指示プロンプトの翻訳ロジック (action: 'translate' で実行済みの想定)
-            
             try {
-                // Step 1: Gemini Flashで画像を解析して、編集用プロンプトを生成
-                // [修正] finalPrompt (翻訳/編集済みのプロンプト) を渡す
+                // ... (編集処理 L. 367-410 は変更なし) ...
+                // (ローテーション済みの API_KEY と API_KEY_EDIT が使用される)
+                
                 const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
                 
-                // Step 2: 生成されたプロンプトでImagen APIを使用して新しい画像を生成
-                // ... (Imagen API 呼び出しはそのまま) ...
+                // [修正] ローテーションされた API_KEY を使用
                 const imagenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
                 
                 const imagenPayload = {
@@ -396,7 +476,6 @@ export async function onRequestPost({ request, env }) {
                     body: JSON.stringify(imagenPayload),
                 });
                 
-                // ... (Imagen レスポンス処理、エラーハンドリングはそのまま) ...
                 const imagenResponseText = await imagenResponse.text();
                 let imagenResult;
                 try {
@@ -407,12 +486,11 @@ export async function onRequestPost({ request, env }) {
                 const base64Image = imagenResult.predictions?.[0]?.bytesBase64Encoded;
 
                 if (base64Image) {
-                    // [修正] originalPrompt を返すように変更
                     return new Response(JSON.stringify({ 
                         base64Image: base64Image,
                         success: true,
                         finalPrompt: analysisResult.editedPrompt,
-                        originalPrompt: originalPrompt, // [修正] クライアントから受け取った原文
+                        originalPrompt: originalPrompt,
                         mode: 'edit'
                     }), {
                         headers: { 'Content-Type': 'application/json' },
@@ -431,70 +509,67 @@ export async function onRequestPost({ request, env }) {
             }
         }
 
-        // 通常の画像生成モード処理
-        if (!API_KEY) {
-            return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), {
+        // [修正] 編集モードでない場合 (else if を削除)
+        if (mode !== 'edit') {
+            // 通常の画像生成モード処理
+            // [修正] API_KEY がローテーションで取得できているかチェック
+            if (!API_KEY) {
+                return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            
+            // [修正] ローテーションされた API_KEY を使用
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
+            
+            const payload = {
+                instances: [
+                    {
+                        prompt: finalPrompt 
+                    }
+                ],
+                parameters: {
+                    sampleCount: 1
+                }
+            };
+
+            // ... (Imagen API呼び出し、レスポンス処理 L. 439-481 は変更なし) ...
+            const geminiResponse = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const responseText = await geminiResponse.text();
+            let geminiResult;
+            try {
+                geminiResult = JSON.parse(responseText);
+            } catch (e) { /* ... */ }
+            if (!geminiResponse.ok || geminiResult.error) { /* ... */ }
+
+            const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded;
+
+            if (base64Image) {
+                return new Response(JSON.stringify({ 
+                    base64Image: base64Image,
+                    success: true,
+                    finalPrompt: finalPrompt,
+                    originalPrompt: originalPrompt 
+                }), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200,
+                });
+            }
+
+            return new Response(JSON.stringify({ 
+                error: '画像データが取得できませんでした。',
+                fullResponse: geminiResult
+            }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
-
-        // [削除] 翻訳処理 (action: 'translate' で実行済みの想定)
-        
-        // 正しいImagen 3.0のエンドポイント
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
-        
-        // Imagen API の正しいペイロード形式
-        const payload = {
-            instances: [
-                {
-                    prompt: finalPrompt // [修正] finalPrompt を使用
-                }
-            ],
-            parameters: {
-                sampleCount: 1
-            }
-        };
-
-        // ... (Imagen API呼び出し、レスポンス処理、エラーハンドリングはそのまま) ...
-        const geminiResponse = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-
-        const responseText = await geminiResponse.text();
-        let geminiResult;
-        try {
-            geminiResult = JSON.parse(responseText);
-        } catch (e) { /* ... */ }
-        if (!geminiResponse.ok || geminiResult.error) { /* ... */ }
-
-
-        // Imagen API のレスポンスから画像を抽出
-        const base64Image = geminiResult.predictions?.[0]?.bytesBase64Encoded;
-
-        if (base64Image) {
-            // [修正] originalPrompt も返す
-            return new Response(JSON.stringify({ 
-                base64Image: base64Image,
-                success: true,
-                finalPrompt: finalPrompt,
-                originalPrompt: originalPrompt // [修正]
-            }), {
-                headers: { 'Content-Type': 'application/json' },
-                status: 200,
-            });
-        }
-
-        // ... (エラーハンドリングはそのまま) ...
-        return new Response(JSON.stringify({ 
-            error: '画像データが取得できませんでした。',
-            fullResponse: geminiResult
-        }), { 
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
 
     } catch (error) {
         return new Response(JSON.stringify({ 
