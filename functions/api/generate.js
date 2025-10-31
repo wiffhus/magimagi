@@ -1,6 +1,5 @@
 // functions/api/generate.js
-// Cloudflare Pages Functions for Imagen 3.0 API & Gemini Flash Preview Image
-// [修正] 'action: generate' 時にも 'Personal' モードのペルソナが適用されるように修正
+// [修正] 'Personal' モードを 'persona' (単一) から 'personalPrefix' と 'personalSuffix' (テンプレート式) に変更
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -41,7 +40,7 @@ Rewritten Prompt:
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
         ],
         generationConfig: {
-            temperature: 0.7,
+            temperature: 1.0,
             maxOutputTokens: 2048
         }
     };
@@ -108,7 +107,7 @@ async function editImageWithGemini(prompt, inputImage, apiKey) {
             }
         ],
         generationConfig: {
-            temperature: 0.5,
+            temperature: 1.0,
             maxOutputTokens: 2048
         },
         safetySettings: [
@@ -217,7 +216,7 @@ Translated English Prompt:
     const payload = {
         contents: [{ parts: [{ text: translatorPrompt }] }],
         generationConfig: {
-            temperature: 0.5,
+            temperature: 1.0,
             maxOutputTokens: 1024
         },
         safetySettings: [
@@ -296,15 +295,17 @@ function getApiKeyByIndex(index, env) {
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // [修正] action, originalPromptFromClient, persona を受け取る
+        // ▼▼▼ [修正] ▼▼▼
         const { 
             prompt,
             originalPrompt: originalPromptFromClient,
             mode, 
             inputImage, 
             action,
-            persona
+            personalPrefix, // [修正]
+            personalSuffix  // [修正]
         } = await request.json();
+        // ▲▲▲ [修正ここまで] ▲▲▲
         
         
         // API_KEY を let で宣言し、アクションに応じて設定する
@@ -312,7 +313,7 @@ export async function onRequestPost({ request, env }) {
         const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; 
 
         if (action === 'generate') {
-            // --- [追加] 画像生成時のみAPIキーローテーションを実行 ---
+            // --- 画像生成時のみAPIキーローテーションを実行 ---
             
             const KV_NAMESPACE = env.KEY_STORE; 
             const KV_KEY_NAME = 'CURRENT_API_INDEX';
@@ -369,8 +370,6 @@ export async function onRequestPost({ request, env }) {
                 let finalPrompt = prompt;
 
                 // Step 1: 翻訳 (ProとEditモード以外)
-                // ※ProモードはPro関数内で翻訳
-                // ※EditモードはEdit用に別途翻訳
                 if (mode !== 'pro' && mode !== 'edit') {
                     const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                     if (!isEng) {
@@ -381,7 +380,6 @@ export async function onRequestPost({ request, env }) {
                 // Step 2: モード別処理
                 switch (mode) {
                     case 'edit':
-                        // 編集モードでも、プロンプト自体が日本語なら英語に翻訳する
                         let translatedEditPrompt = originalPromptForTranslate;
                         const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                         if (!isEng) {
@@ -401,14 +399,26 @@ export async function onRequestPost({ request, env }) {
                     case 'pro':
                         finalPrompt = await translateProPrompt(originalPromptForTranslate, API_KEY);
                         break;
+                    
+                    // ▼▼▼ [修正] ▼▼▼
                     case 'personal':
-                        // "persona" が入力されていれば、翻訳済みプロンプトの先頭に追加
-                        if (persona && persona.trim() !== '') {
-                            finalPrompt = `${persona.trim()}, ${translatedPrompt}`;
-                        } else {
-                            finalPrompt = translatedPrompt;
+                        let prefix = (personalPrefix && personalPrefix.trim() !== '') ? personalPrefix.trim() : '';
+                        let suffix = (personalSuffix && personalSuffix.trim() !== '') ? personalSuffix.trim() : '';
+                        
+                        // 翻訳済みプロンプトを開始点にする
+                        finalPrompt = translatedPrompt;
+                        
+                        // Prefixを追加 (存在する場合)
+                        if (prefix) {
+                            finalPrompt = `${prefix}, ${finalPrompt}`;
+                        }
+                        // Suffixを追加 (存在する場合)
+                        if (suffix) {
+                            finalPrompt = `${finalPrompt}, ${suffix}`;
                         }
                         break;
+                    // ▲▲▲ [修正ここまで] ▲▲▲
+
                     case 'default':
                     default:
                         finalPrompt = translatedPrompt;
@@ -438,18 +448,32 @@ export async function onRequestPost({ request, env }) {
         
         let finalPrompt = prompt; // 'prompt' には既に翻訳/処理済みのプロンプトが入っている想定
         
-        // ▼▼▼ [ここが修正点！] ▼▼▼
-        // Generate直押し（Translateスキップ）の場合のペルソナ適用
-        // Translateボタンを押した場合、'prompt' には既にペルソナが含まれている (e.g., "Persona, translated text")
-        // しかし、Translateをスキップした場合、'prompt' にはペルソナが含まれていない (e.g., "a cat sleeping")
-        // そのため、'prompt' が 'persona' で始まっていないかチェックし、始まっていなければペルソナを先頭に追加する
-        if (mode === 'personal' && persona && persona.trim() !== '') {
-            const trimmedPersona = persona.trim();
-            // finalPrompt (e.g., "a cat sleeping") がペルソナ (e.g., "A professional photographer") で始まっていないことを確認
-            // ※小文字に統一して比較
-            if (!finalPrompt.toLowerCase().startsWith(trimmedPersona.toLowerCase())) {
-                finalPrompt = `${trimmedPersona}, ${finalPrompt}`;
+        // ▼▼▼ [修正] ▼▼▼
+        // Generate直押し（Translateスキップ）の場合の Prefix/Suffix 適用
+        if (mode === 'personal') {
+            let prefix = (personalPrefix && personalPrefix.trim() !== '') ? personalPrefix.trim() : '';
+            let suffix = (personalSuffix && personalSuffix.trim() !== '') ? personalSuffix.trim() : '';
+
+            // 'Translate' ボタンが押された場合、'prompt' には既に Prefix/Suffix が含まれている可能性がある
+            // そのため、'prompt' が Prefix で始まっていないか、Suffix で終わっていないかをチェックする
+            
+            const trimmedFinalPrompt = finalPrompt.trim();
+            const trimmedPrefix = prefix;
+            const trimmedSuffix = suffix;
+            const lowerFinalPrompt = trimmedFinalPrompt.toLowerCase();
+
+            let needsPrefix = (prefix && !lowerFinalPrompt.startsWith(trimmedPrefix.toLowerCase()));
+            let needsSuffix = (suffix && !lowerFinalPrompt.endsWith(trimmedSuffix.toLowerCase()));
+
+            let tempPrompt = trimmedFinalPrompt;
+
+            if (needsPrefix) {
+                tempPrompt = `${trimmedPrefix}, ${tempPrompt}`;
             }
+            if (needsSuffix) {
+                tempPrompt = `${tempPrompt}, ${trimmedSuffix}`;
+            }
+            finalPrompt = tempPrompt;
         }
         // ▲▲▲ [修正ここまで] ▲▲▲
         
@@ -478,7 +502,6 @@ export async function onRequestPost({ request, env }) {
 
             try {
                 // 1. Gemini Flashでプロンプトを分析・編集
-                // (注意: 現在の実装では、EditモードとPersonalモードは併用されません)
                 const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
                 
                 // 2. Imagen 3.0で画像を生成（ローテーションされたAPI_KEYを使用）
@@ -519,7 +542,7 @@ export async function onRequestPost({ request, env }) {
                     return new Response(JSON.stringify({ 
                         base64Image: base64Image,
                         success: true,
-                        finalPrompt: analysisResult.editedPrompt, // 編集後のプロンプトを返す
+                        finalPrompt: analysisResult.editedPrompt,
                         originalPrompt: originalPrompt,
                         mode: 'edit'
                     }), {
@@ -554,8 +577,6 @@ export async function onRequestPost({ request, env }) {
             const payload = {
                 instances: [
                     {
-                        // ここで渡される 'finalPrompt' は、
-                        // この関数の冒頭でペルソナが追加された（かもしれない）もの
                         prompt: finalPrompt 
                     }
                 ],
@@ -588,7 +609,7 @@ export async function onRequestPost({ request, env }) {
                 return new Response(JSON.stringify({ 
                     base64Image: base64Image,
                     success: true,
-                    finalPrompt: finalPrompt, // ペルソナが追加された最終プロンプトを返す
+                    finalPrompt: finalPrompt,
                     originalPrompt: originalPrompt 
                 }), {
                     headers: { 'Content-Type': 'application/json' },
