@@ -1,5 +1,6 @@
 // functions/api/generate.js
 // [修正] 'Personal' モードを 'persona' (単一) から 'personalPrefix' と 'personalSuffix' (テンプレート式) に変更
+// [修正] imagen-3.0-generate の temperature を設定
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -40,7 +41,7 @@ Rewritten Prompt:
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
         ],
         generationConfig: {
-            temperature: 1.0,
+            temperature: 0.7,
             maxOutputTokens: 2048
         }
     };
@@ -295,17 +296,16 @@ function getApiKeyByIndex(index, env) {
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // ▼▼▼ [修正] ▼▼▼
+        // [修正] personalPrefix と personalSuffix を受け取る
         const { 
             prompt,
             originalPrompt: originalPromptFromClient,
             mode, 
             inputImage, 
             action,
-            personalPrefix, // [修正]
-            personalSuffix  // [修正]
+            personalPrefix,
+            personalSuffix
         } = await request.json();
-        // ▲▲▲ [修正ここまで] ▲▲▲
         
         
         // API_KEY を let で宣言し、アクションに応じて設定する
@@ -400,24 +400,19 @@ export async function onRequestPost({ request, env }) {
                         finalPrompt = await translateProPrompt(originalPromptForTranslate, API_KEY);
                         break;
                     
-                    // ▼▼▼ [修正] ▼▼▼
                     case 'personal':
                         let prefix = (personalPrefix && personalPrefix.trim() !== '') ? personalPrefix.trim() : '';
                         let suffix = (personalSuffix && personalSuffix.trim() !== '') ? personalSuffix.trim() : '';
                         
-                        // 翻訳済みプロンプトを開始点にする
                         finalPrompt = translatedPrompt;
                         
-                        // Prefixを追加 (存在する場合)
                         if (prefix) {
                             finalPrompt = `${prefix}, ${finalPrompt}`;
                         }
-                        // Suffixを追加 (存在する場合)
                         if (suffix) {
                             finalPrompt = `${finalPrompt}, ${suffix}`;
                         }
                         break;
-                    // ▲▲▲ [修正ここまで] ▲▲▲
 
                     case 'default':
                     default:
@@ -446,17 +441,13 @@ export async function onRequestPost({ request, env }) {
 
         // --- [修正] 生成アクション (Generateボタン) ---
         
-        let finalPrompt = prompt; // 'prompt' には既に翻訳/処理済みのプロンプトが入っている想定
+        let finalPrompt = prompt;
         
-        // ▼▼▼ [修正] ▼▼▼
         // Generate直押し（Translateスキップ）の場合の Prefix/Suffix 適用
         if (mode === 'personal') {
             let prefix = (personalPrefix && personalPrefix.trim() !== '') ? personalPrefix.trim() : '';
             let suffix = (personalSuffix && personalSuffix.trim() !== '') ? personalSuffix.trim() : '';
 
-            // 'Translate' ボタンが押された場合、'prompt' には既に Prefix/Suffix が含まれている可能性がある
-            // そのため、'prompt' が Prefix で始まっていないか、Suffix で終わっていないかをチェックする
-            
             const trimmedFinalPrompt = finalPrompt.trim();
             const trimmedPrefix = prefix;
             const trimmedSuffix = suffix;
@@ -475,9 +466,8 @@ export async function onRequestPost({ request, env }) {
             }
             finalPrompt = tempPrompt;
         }
-        // ▲▲▲ [修正ここまで] ▲▲▲
         
-        const originalPrompt = originalPromptFromClient || finalPrompt; // 翻訳元のプロンプト
+        const originalPrompt = originalPromptFromClient || finalPrompt;
 
         // [修正] 編集モードの処理
         if (mode === 'edit') {
@@ -504,9 +494,10 @@ export async function onRequestPost({ request, env }) {
                 // 1. Gemini Flashでプロンプトを分析・編集
                 const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
                 
-                // 2. Imagen 3.0で画像を生成（ローテーションされたAPI_KEYを使用）
+                // 2. Imagen 3.0で画像を生成
                 const imagenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
                 
+                // ▼▼▼ [修正] ▼▼▼
                 const imagenPayload = {
                     instances: [
                         {
@@ -514,10 +505,11 @@ export async function onRequestPost({ request, env }) {
                         }
                     ],
                     parameters: {
-                        sampleCount: 1
-                        temperature: 0.1
+                        sampleCount: 1,
+                        temperature: 0.5 // [追加] 0.5に設定
                     }
                 };
+                // ▲▲▲ [修正ここまで] ▲▲▲
 
                 const imagenResponse = await fetch(imagenApiUrl, {
                     method: 'POST',
@@ -572,20 +564,21 @@ export async function onRequestPost({ request, env }) {
                 });
             }
             
-            // ローテーションされた API_KEY を使用
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
             
+            // ▼▼▼ [修正] ▼▼▼
             const payload = {
                 instances: [
                     {
                         prompt: finalPrompt 
-                        temperature: 1.2
                     }
                 ],
                 parameters: {
-                    sampleCount: 1
+                    sampleCount: 1,
+                    temperature: 1.2
                 }
             };
+            // ▲▲▲ [修正ここまで] ▲▲▲
 
             const geminiResponse = await fetch(apiUrl, {
                 method: 'POST',
