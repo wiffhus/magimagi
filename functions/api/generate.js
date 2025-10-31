@@ -1,6 +1,7 @@
 // functions/api/generate.js
 // [修正] 'Personal' モードを 'persona' (単一) から 'personalPrefix' と 'personalSuffix' (テンプレート式) に変更
-// [修正] imagen-3.0-generate の temperature を設定
+// [修正] 'mode: edit' を 'imagen-3.0-capability-001' を使用したインペインティング処理に書き換え
+// [修正] imagen-3.0-generate の temperature を 0.5 に設定
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -77,10 +78,13 @@ Rewritten Prompt:
 }
 
 /**
- * Gemini Flash APIを使用して画像を編集する
+ * [注意] この関数 (editImageWithGemini) は、
+ * 'mode: edit' がインペインティングに置き換えられたため、
+ * 現在のコードパスでは呼び出されなくなりました。
+ * (ただし、'pro'モード翻訳などの他の関数が内部で依存している場合に備えて残しています)
  */
 async function editImageWithGemini(prompt, inputImage, apiKey) {
-    // 注意: この関数に渡される 'prompt' は、呼び出し元で翻訳済みである想定
+    // ... (関数の中身は変更なし) ...
     
     const analysisApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
 
@@ -108,7 +112,7 @@ async function editImageWithGemini(prompt, inputImage, apiKey) {
             }
         ],
         generationConfig: {
-            temperature: 1.0,
+            temperature: 0.5,
             maxOutputTokens: 2048
         },
         safetySettings: [
@@ -217,7 +221,7 @@ Translated English Prompt:
     const payload = {
         contents: [{ parts: [{ text: translatorPrompt }] }],
         generationConfig: {
-            temperature: 1.0,
+            temperature: 0.5,
             maxOutputTokens: 1024
         },
         safetySettings: [
@@ -296,12 +300,13 @@ function getApiKeyByIndex(index, env) {
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // [修正] personalPrefix と personalSuffix を受け取る
+        // [修正] personalPrefix, personalSuffix, maskImage を受け取る
         const { 
             prompt,
             originalPrompt: originalPromptFromClient,
             mode, 
             inputImage, 
+            maskImage, // [追加]
             action,
             personalPrefix,
             personalSuffix
@@ -310,7 +315,8 @@ export async function onRequestPost({ request, env }) {
         
         // API_KEY を let で宣言し、アクションに応じて設定する
         let API_KEY; 
-        const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; 
+        // [削除] API_KEY_EDIT はインペインティングでは不要
+        // const API_KEY_EDIT = env.GEMINI_API_KEY_EDIT; 
 
         if (action === 'generate') {
             // --- 画像生成時のみAPIキーローテーションを実行 ---
@@ -355,7 +361,7 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // --- [追加] 翻訳アクション (Translateボタン) ---
+        // --- 翻訳アクション (Translateボタン) ---
         if (action === 'translate') {
             if (!API_KEY) {
                  return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。翻訳に必要です。' }), {
@@ -369,8 +375,9 @@ export async function onRequestPost({ request, env }) {
                 let translatedPrompt = prompt;
                 let finalPrompt = prompt;
 
-                // Step 1: 翻訳 (ProとEditモード以外)
-                if (mode !== 'pro' && mode !== 'edit') {
+                // Step 1: 翻訳 (Proモード以外)
+                // [修正] 'edit' モードでも翻訳が必要
+                if (mode !== 'pro') {
                     const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                     if (!isEng) {
                         translatedPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
@@ -380,12 +387,8 @@ export async function onRequestPost({ request, env }) {
                 // Step 2: モード別処理
                 switch (mode) {
                     case 'edit':
-                        let translatedEditPrompt = originalPromptForTranslate;
-                        const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
-                        if (!isEng) {
-                            translatedEditPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
-                        }
-                        finalPrompt = translatedEditPrompt;
+                        // 'edit' モードは 'personal' と同じく、翻訳だけして Prefix/Suffix は適用しない
+                        finalPrompt = translatedPrompt;
                         break;
                     case 'capa':
                         finalPrompt = `${translatedPrompt}, monochrome, high contrast, grainy film photo, 35mm, photojournalism style inspired by Robert Capa, dramatic shadows`;
@@ -439,7 +442,7 @@ export async function onRequestPost({ request, env }) {
             }
         }
 
-        // --- [修正] 生成アクション (Generateボタン) ---
+        // --- 生成アクション (Generateボタン) ---
         
         let finalPrompt = prompt;
         
@@ -469,54 +472,60 @@ export async function onRequestPost({ request, env }) {
         
         const originalPrompt = originalPromptFromClient || finalPrompt;
 
-        // [修正] 編集モードの処理
+        // ▼▼▼ [ここから修正] ▼▼▼
+        // [修正] 編集モード (インペインティング) の処理
         if (mode === 'edit') {
+            
             if (!inputImage) {
-                 return new Response(JSON.stringify({ error: '編集モードには画像が必要です。' }), {
+                 return new Response(JSON.stringify({ error: '編集モードには元画像が必要です。' }), {
                     status: 400,
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
-            if (!API_KEY_EDIT) {
-                 return new Response(JSON.stringify({ error: '編集用APIキー(GEMINI_API_KEY_EDIT)が設定されていません。' }), {
-                    status: 500,
+            if (!maskImage) {
+                 return new Response(JSON.stringify({ error: '編集モードにはマスク画像が必要です。' }), {
+                    status: 400,
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
-             if (!API_KEY) {
-                 return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。' }), {
+             if (!API_KEY) { // ローテーションされたAPIキーをチェック
+                 return new Response(JSON.stringify({ error: 'APIキーが設定されていません。' }), {
                     status: 500,
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
 
             try {
-                // 1. Gemini Flashでプロンプトを分析・編集
-                const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
+                // 1. Imagen 3.0 Inpainting APIを呼び出す
+                const inpaintApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-capability-001:predict?key=${API_KEY}`;
                 
-                // 2. Imagen 3.0で画像を生成
-                const imagenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
-                
-                // ▼▼▼ [修正] ▼▼▼
-                const imagenPayload = {
+                // 2. ペイロードを作成
+                const inpaintPayload = {
                     instances: [
                         {
-                            prompt: analysisResult.editedPrompt
+                            prompt: finalPrompt, // 編集指示プロンプト
+                            image: {
+                                bytesBase64Encoded: inputImage // 元画像
+                            },
+                            mask: {
+                                bytesBase64Encoded: maskImage // マスク画像 (白黒)
+                            }
                         }
                     ],
                     parameters: {
                         sampleCount: 1,
-                        temperature: 0.0 // [追加] 0.5に設定
+                        temperature: 0.5 // Imagen 3.0 の温度
                     }
                 };
-                // ▲▲▲ [修正ここまで] ▲▲▲
 
-                const imagenResponse = await fetch(imagenApiUrl, {
+                // 3. APIリクエスト実行
+                const imagenResponse = await fetch(inpaintApiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(imagenPayload),
+                    body: JSON.stringify(inpaintPayload),
                 });
                 
+                // 4. レスポンス処理
                 const imagenResponseText = await imagenResponse.text();
                 let imagenResult;
                 
@@ -535,7 +544,7 @@ export async function onRequestPost({ request, env }) {
                     return new Response(JSON.stringify({ 
                         base64Image: base64Image,
                         success: true,
-                        finalPrompt: analysisResult.editedPrompt,
+                        finalPrompt: finalPrompt,
                         originalPrompt: originalPrompt,
                         mode: 'edit'
                     }), {
@@ -544,6 +553,7 @@ export async function onRequestPost({ request, env }) {
                     });
                 }
                  throw new Error('編集画像の生成に失敗しました。');
+
             } catch (editError) {
                  return new Response(JSON.stringify({
                     error: '画像編集処理中にエラーが発生しました。',
@@ -554,6 +564,8 @@ export async function onRequestPost({ request, env }) {
                 });
             }
         }
+        // ▲▲▲ [修正ここまで] ▲▲▲
+
 
         // [修正] 編集モードでない場合 (通常の画像生成)
         if (mode !== 'edit') {
@@ -566,7 +578,6 @@ export async function onRequestPost({ request, env }) {
             
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${API_KEY}`;
             
-            // ▼▼▼ [修正] ▼▼▼
             const payload = {
                 instances: [
                     {
@@ -575,10 +586,9 @@ export async function onRequestPost({ request, env }) {
                 ],
                 parameters: {
                     sampleCount: 1,
-                    temperature: 1.2
+                    temperature: 0.5 // Imagen 3.0 の温度
                 }
             };
-            // ▲▲▲ [修正ここまで] ▲▲▲
 
             const geminiResponse = await fetch(apiUrl, {
                 method: 'POST',
