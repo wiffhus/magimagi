@@ -82,7 +82,7 @@
             margin-bottom: 16px;
         }
 
-        /* ▼▼▼ [修正] ラベルのマージンを変更 ▼▼▼ */
+        /* [修正] ラベルのマージンを変更 */
         label {
             display: block;
             margin-bottom: 0; /* .input-header がマージンを持つため */
@@ -90,10 +90,7 @@
             font-size: 13px;
             font-weight: 500;
         }
-        /* ▲▲▲ [修正ここまで] ▲▲▲ */
 
-
-        /* ▼▼▼ [ここから追加] ▼▼▼ */
         /* [追加] 入力欄ヘッダー (ラベルとボタン) */
         .input-header {
             display: flex;
@@ -141,8 +138,6 @@
             background: #ffcdd2;
             border-color: #ef5350;
         }
-        /* ▲▲▲ [追加ここまで] ▲▲▲ */
-
 
         textarea,
         select,
@@ -838,6 +833,7 @@
                 ></textarea>
                 <div class="input-hint" id="inputHint">Press Enter again to generate</div>
             </div>
+
             <div class="input-group">
                 <label for="styleMode">Style Mode</label>
                 <select id="styleMode">
@@ -847,20 +843,32 @@
                     <option value="pri">Pri (Purikura Style)</option>
                     <option value="pro">Pro (Advanced)</option>
                     <option value="edit">Edit (Image-to-Image)</option>
-                    <option value="personal">Personal (Custom Persona)</option>
+                    <option value="personal">Personal (Template)</option>
                 </select>
             </div>
 
-            <div class="input-group" id="personaInputArea" style="display: none;">
+            <div class="input-group" id="personalModeArea" style="display: none;">
+                
                 <div class="input-header">
-                    <label for="personaInput">Custom Persona</label>
+                    <label for="personalPrefix">Prompt Prefix (Before Query)</label>
                     <div class="input-actions">
-                        <button class="action-btn" onclick="selectAllText('personaInput')">Select All</button>
-                        <button class="action-btn" onclick="copyText('personaInput')">Copy</button>
-                        <button class="action-btn danger" onclick="clearText('personaInput')">Clear</button>
+                        <button class="action-btn" onclick="selectAllText('personalPrefix')">Select All</button>
+                        <button class="action-btn" onclick="copyText('personalPrefix')">Copy</button>
+                        <button class="action-btn danger" onclick="clearText('personalPrefix')">Clear</button>
                     </div>
                 </div>
-                <textarea id="personaInput" placeholder="e.g., A professional photographer, impressionist painter, etc." style="min-height: 60px;"></textarea>
+                <textarea id="personalPrefix" placeholder="e.g., A professional photograph, ultra-realistic..." style="min-height: 60px; margin-bottom: 10px;"></textarea>
+                
+                <div class="input-header">
+                    <label for="personalSuffix">Prompt Suffix (After Query)</label>
+                    <div class="input-actions">
+                        <button class="action-btn" onclick="selectAllText('personalSuffix')">Select All</button>
+                        <button class="action-btn" onclick="copyText('personalSuffix')">Copy</button>
+                        <button class="action-btn danger" onclick="clearText('personalSuffix')">Clear</button>
+                    </div>
+                </div>
+                <textarea id="personalSuffix" placeholder="e.g., 4k, cinematic lighting, masterpiece..." style="min-height: 60px;"></textarea>
+                
                 <div class="input-hint" style="font-size: 11px; color: #999; margin-top: 4px; display: block;">Saved automatically in your browser.</div>
             </div>
             <div class="input-group">
@@ -980,7 +988,7 @@
         let shouldStop = false;            
         let currentRetryCount = 0;         
 
-        // --- ▼▼▼ [ここから追加] ▼▼▼ ---
+        // --- [追加] ---
         // テキストエリア操作関数
         function selectAllText(elementId) {
             const textarea = document.getElementById(elementId);
@@ -993,12 +1001,8 @@
             const textarea = document.getElementById(elementId);
             if (textarea) {
                 textarea.value = '';
-                
-                // [重要] ペルソナ欄をクリアした場合はlocalStorageも更新
-                if (elementId === 'personaInput') {
-                    // inputイベントを手動で発火させ、localStorage保存リスナーをトリガーする
-                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                }
+                // [修正] inputイベントを手動で発火させ、localStorage保存リスナーをトリガーする
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
 
@@ -1006,14 +1010,13 @@
             const textarea = document.getElementById(elementId);
             if (textarea && textarea.value) {
                 navigator.clipboard.writeText(textarea.value).then(() => {
-                    // オプション: ここに "Copied!" などの一時的なフィードバックを追加可能
                     console.log('Copied to clipboard');
                 }).catch(err => {
                     console.error('Failed to copy text: ', err);
                 });
             }
         }
-        // --- ▲▲▲ [追加ここまで] ▲▲▲ ---
+        // --- [追加ここまで] ---
 
 
         // LocalStorageから履歴を読み込む
@@ -1250,12 +1253,15 @@
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    // ▼▼▼ [修正] ▼▼▼
                     body: JSON.stringify({
                         prompt: originalPrompt,
                         mode: mode,
                         action: 'translate',
-                        persona: document.getElementById('personaInput').value
+                        personalPrefix: document.getElementById('personalPrefix').value, // [修正]
+                        personalSuffix: document.getElementById('personalSuffix').value  // [修正]
                     })
+                    // ▲▲▲ [修正ここまで] ▲▲▲
                 });
 
                 const data = await response.json();
@@ -1361,19 +1367,22 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        // ▼▼▼ [修正] ▼▼▼
                         body: JSON.stringify((function() {
                             const requestBody = {
                                 prompt: finalPrompt,
                                 originalPrompt: originalPrompt,
                                 mode: mode,
                                 action: 'generate',
-                                persona: document.getElementById('personaInput').value
+                                personalPrefix: document.getElementById('personalPrefix').value, // [修正]
+                                personalSuffix: document.getElementById('personalSuffix').value  // [修正]
                             };
                             if (mode === 'edit') {
                                 requestBody.inputImage = uploadedImageBase64;
                             }
                             return requestBody;
                         })()),
+                        // ▲▲▲ [修正ここまで] ▲▲▲
                     });
 
                     if (shouldStop) break;
@@ -1592,20 +1601,20 @@
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('uploadArea');
                 const editModeInfo = document.getElementById('editModeInfo');
-                const personaInputArea = document.getElementById('personaInputArea');
+                const personalModeArea = document.getElementById('personalModeArea'); // [修正]
 
                 if (e.target.value === 'edit') {
                     uploadArea.style.display = 'block';
                     editModeInfo.classList.add('active');
-                    personaInputArea.style.display = 'none';
-                } else if (e.target.value === 'personal') {
+                    personalModeArea.style.display = 'none'; // [修正]
+                } else if (e.target.value === 'personal') { // [修正]
                     uploadArea.style.display = 'none';
                     editModeInfo.classList.remove('active');
-                    personaInputArea.style.display = 'block';
+                    personalModeArea.style.display = 'block'; // [修正]
                 } else {
                     uploadArea.style.display = 'none';
                     editModeInfo.classList.remove('active');
-                    personaInputArea.style.display = 'none';
+                    personalModeArea.style.display = 'none'; // [修正]
                 }
             });
 
@@ -1637,17 +1646,31 @@
                 }
             });
 
-            // ペルソナ入力欄をlocalStorageに自動保存
-            const personaInput = document.getElementById('personaInput');
-            personaInput.addEventListener('input', () => {
-                localStorage.setItem('customPersona', personaInput.value);
+
+            // --- ▼▼▼ [ここから修正] ▼▼▼ ---
+            // [修正] ペルソナ入力欄 (Prefix) をlocalStorageに自動保存
+            const personalPrefixInput = document.getElementById('personalPrefix');
+            personalPrefixInput.addEventListener('input', () => {
+                localStorage.setItem('personalPrefix', personalPrefixInput.value);
             });
 
-            // ページ読み込み時にlocalStorageからペルソナを読み込む
-            const savedPersona = localStorage.getItem('customPersona');
-            if (savedPersona) {
-                personaInput.value = savedPersona;
+            // [追加] ペルソナ入力欄 (Suffix) をlocalStorageに自動保存
+            const personalSuffixInput = document.getElementById('personalSuffix');
+            personalSuffixInput.addEventListener('input', () => {
+                localStorage.setItem('personalSuffix', personalSuffixInput.value);
+            });
+
+            // [修正] ページ読み込み時にlocalStorageからペルソナを読み込む
+            const savedPrefix = localStorage.getItem('personalPrefix');
+            if (savedPrefix) {
+                personalPrefixInput.value = savedPrefix;
             }
+            const savedSuffix = localStorage.getItem('personalSuffix');
+            if (savedSuffix) {
+                personalSuffixInput.value = savedSuffix;
+            }
+            // --- ▲▲▲ [修正ここまで] ▲▲▲ ---
+
 
             // 履歴と生成カウントを読み込む
             loadHistory();
