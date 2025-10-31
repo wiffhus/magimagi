@@ -65,32 +65,6 @@
             z-index: 10;
         }
 
-        /* Mac風ボタンを削除 - コメントアウト
-        .window-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .window-control {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 0, 0, 0.2);
-        }
-
-        .control-close {
-            background: #ff5f57;
-        }
-
-        .control-minimize {
-            background: #ffbd2e;
-        }
-
-        .control-maximize {
-            background: #28c840;
-        }
-        */
-
         h1 {
             font-size: 14px;
             font-weight: 600;
@@ -812,7 +786,14 @@
                     <option value="pri">Pri (Purikura Style)</option>
                     <option value="pro">Pro (Advanced)</option>
                     <option value="edit">Edit (Image-to-Image)</option>
+                    <option value="personal">Personal (Custom Persona)</option>
                 </select>
+            </div>
+
+            <div class="input-group" id="personaInputArea" style="display: none;">
+                <label for="personaInput">Custom Persona</label>
+                <textarea id="personaInput" placeholder="e.g., A professional photographer, impressionist painter, etc." style="min-height: 60px;"></textarea>
+                <div class="input-hint" style="font-size: 11px; color: #999; margin-top: 4px; display: block;">Saved automatically in your browser.</div>
             </div>
 
             <div class="input-group">
@@ -923,7 +904,7 @@
         let uploadedImageBase64 = null;
         let history = [];
         let generationCount = 0;
-        let currentOriginalPrompt = null;  // [修正] 翻訳前のプロンプトを一時保存
+        let currentOriginalPrompt = null;
         let currentFinalPrompt = null;     
         let lastEnterTime = 0;             
         const COST_PER_IMAGE = 0.04;       
@@ -947,16 +928,16 @@
             if (saved) {
                 generationCount = parseInt(saved);
                 updateGenerationCounter();
-                updateCostDisplay(); // [追加] コスト表示も更新
+                updateCostDisplay();
             }
         }
 
-        // [修正] 履歴に追加（originalPromptも保存）
+        // 履歴に追加
         function addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl) {
             const historyItem = {
                 id: Date.now(),
-                originalPrompt: originalPrompt,  // [追加]
-                finalPrompt: finalPrompt,        // [変更] prompt → finalPrompt
+                originalPrompt: originalPrompt,
+                finalPrompt: finalPrompt,
                 thumbnailUrl: thumbnailUrl,
                 fullImageUrl: fullImageUrl || thumbnailUrl,
                 seed: seed,
@@ -965,7 +946,6 @@
             
             history.unshift(historyItem);
             
-            // 最大50件まで保存
             if (history.length > 50) {
                 history = history.slice(0, 50);
             }
@@ -1008,7 +988,7 @@
             generationCount++;
             localStorage.setItem('generationCount', generationCount.toString());
             updateGenerationCounter();
-            updateCostDisplay(); // [追加] コスト表示も更新
+            updateCostDisplay();
         }
 
         // 生成カウンター表示を更新
@@ -1017,7 +997,7 @@
             counter.textContent = `${generationCount} images generated`;
         }
 
-        // [追加] コスト表示を更新
+        // コスト表示を更新
         function updateCostDisplay() {
             const totalCostUSD = generationCount * COST_PER_IMAGE;
             const totalCostJPY = totalCostUSD * USD_TO_JPY;
@@ -1088,7 +1068,7 @@
             document.getElementById('uploadedImagePreview').classList.remove('active');
         }
 
-        // [追加] リトライ回数を取得
+        // リトライ回数を取得
         function getRetryCount() {
             const retrySelect = document.getElementById('retryCount');
             const customInput = document.getElementById('customRetryCount');
@@ -1100,7 +1080,7 @@
             return parseInt(retrySelect.value) || 0;
         }
 
-        // [追加] 生成を停止
+        // 生成を停止
         function stopGeneration() {
             shouldStop = true;
             isGenerating = false;
@@ -1123,7 +1103,7 @@
             error.classList.add('active');
         }
 
-        // [追加] リトライカウンター更新
+        // リトライカウンター更新
         function updateRetryCounter(attempt, maxRetries) {
             const retryCounter = document.getElementById('retryCounter');
             if (attempt > 0) {
@@ -1133,13 +1113,13 @@
             }
         }
 
-        // [追加] 待機関数
+        // 待機関数
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
         /**
-         * [新設] 翻訳ボタンの処理
+         * 翻訳ボタンの処理
          */
         async function translatePrompt() {
             const promptInput = document.getElementById('prompt');
@@ -1157,7 +1137,6 @@
 
             error.classList.remove('active');
             translateBtn.disabled = true;
-            // [修正] スピナーをボタンに追加
             translateBtn.innerHTML = `
                 <div class="btn-spinner"></div>
                 Translating...
@@ -1170,7 +1149,8 @@
                     body: JSON.stringify({
                         prompt: originalPrompt,
                         mode: mode,
-                        action: 'translate' // 翻訳アクションを明示
+                        action: 'translate', // 翻訳アクションを明示
+                        persona: document.getElementById('personaInput').value // [追加]
                     })
                 });
 
@@ -1192,7 +1172,6 @@
                 error.classList.add('active');
             } finally {
                 translateBtn.disabled = false;
-                // [修正] ボタンのSVGアイコンを戻す
                 translateBtn.innerHTML = `
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12H3"></path>
@@ -1204,11 +1183,12 @@
             }
         }
 
+        /**
+         * 生成ボタンの処理
+         */
         async function generateImage() {
-            // [修正] finalPromptとoriginalPromptを定義
             const finalPrompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
-            // 翻訳ボタンが押されていれば原文、そうでなければ (手動編集 or 英語入力) finalPrompt
             const originalPrompt = currentOriginalPrompt || finalPrompt; 
             currentOriginalPrompt = null; // 生成実行時にリセット
 
@@ -1228,15 +1208,14 @@
             result.classList.remove('active');
             saveStatus.className = 'save-status';
             seedDisplay.classList.remove('active');
-            document.getElementById('inputHint').classList.remove('visible'); // ヒントを非表示
+            document.getElementById('inputHint').classList.remove('visible');
 
-            if (!finalPrompt) { // [修正] チェック対象を finalPrompt に
+            if (!finalPrompt) {
                 errorText.textContent = 'Please enter a prompt.';
                 error.classList.add('active');
                 return;
             }
 
-            // [追加] 編集モードの場合、画像が必要
             if (mode === 'edit' && !uploadedImageBase64) {
                 errorText.textContent = 'Please upload an image for Edit mode.';
                 error.classList.add('active');
@@ -1252,7 +1231,7 @@
 
             // UI update
             generateBtn.disabled = true;
-            stopBtn.style.display = 'flex'; // 停止ボタンを表示
+            stopBtn.style.display = 'flex';
             
             if (mode === 'pro') {
                 loadingText.textContent = 'Optimizing prompt (Pro)...';
@@ -1262,7 +1241,7 @@
                 loadingText.textContent = 'Generating image...';
             }
             loading.classList.add('active');
-            closeSidebar(); // 生成開始時にサイドバーを閉じる（モバイルのみ）
+            closeSidebar();
 
             // リトライループ
             while (currentRetryCount <= maxRetries && !success && !shouldStop) {
@@ -1278,15 +1257,14 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        // [修正] bodyに action: 'generate' と両方のプロンプトを渡す
                         body: JSON.stringify((function() {
                             const requestBody = {
-                                prompt: finalPrompt,        // 翻訳/編集後のプロンプト
-                                originalPrompt: originalPrompt, // 翻訳前のプロンプト
+                                prompt: finalPrompt,
+                                originalPrompt: originalPrompt,
                                 mode: mode,
-                                action: 'generate' // 生成アクションを明示
+                                action: 'generate',
+                                persona: document.getElementById('personaInput').value // [追加]
                             };
-                            // 編集モードの場合、入力画像を追加
                             if (mode === 'edit') {
                                 requestBody.inputImage = uploadedImageBase64;
                             }
@@ -1294,7 +1272,7 @@
                         })()),
                     });
 
-                    if (shouldStop) break; // 停止チェック
+                    if (shouldStop) break;
 
                     loadingText.textContent = 'Generating image...';
 
@@ -1310,6 +1288,9 @@
                         if (data.proTranslateError) {
                             details = `Pro Mode Error: ${JSON.stringify(data.proTranslateError)}`;
                         }
+                        if (data.editError) {
+                            details = `Edit Mode Error: ${JSON.stringify(data.editError)}`;
+                        }
                         throw new Error(`${errorMsg} ${details}`);
                     }
 
@@ -1321,11 +1302,9 @@
                     document.getElementById('seedValue').textContent = currentSeed;
                     seedDisplay.classList.add('active');
 
-                    // [修正] サーバーから返されたプロンプトを使用
                     currentOriginalPrompt = data.originalPrompt || originalPrompt;
                     currentFinalPrompt = data.finalPrompt || finalPrompt;
 
-                    // [追加] 翻訳後プロンプトを表示（元のプロンプトと異なる場合のみ）
                     if (currentFinalPrompt !== currentOriginalPrompt) {
                         document.getElementById('finalPromptText').textContent = currentFinalPrompt;
                         document.getElementById('promptDisplay').style.display = 'block';
@@ -1338,19 +1317,17 @@
                     // Save to Google Drive via Cloudflare proxy
                     saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image, currentSeed);
                     
-                    success = true; // 成功フラグを立てる
+                    success = true;
 
                 } catch (err) {
                     currentRetryCount++;
                     
                     if (currentRetryCount > maxRetries || shouldStop) {
-                        // 最終エラー表示
                         errorText.textContent = shouldStop 
                             ? 'Generation stopped by user.' 
                             : `${err.message} (Failed after ${maxRetries} retries)`;
                         error.classList.add('active');
                     } else {
-                        // リトライ中のメッセージ
                         console.log(`Retry ${currentRetryCount}/${maxRetries}: ${err.message}`);
                     }
                 }
@@ -1359,13 +1336,13 @@
             // クリーンアップ
             isGenerating = false;
             generateBtn.disabled = false;
-            stopBtn.style.display = 'none'; // 停止ボタンを非表示
+            stopBtn.style.display = 'none';
             loading.classList.remove('active');
             loadingText.textContent = 'Generating image...';
             retryCounter.textContent = '';
         }
 
-        // [修正] saveToGoogleDrive関数を更新
+        // Google Driveへ保存
         async function saveToGoogleDrive(originalPrompt, finalPrompt, base64Image, seed) {
             const saveStatus = document.getElementById('saveStatus');
             
@@ -1387,8 +1364,8 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        originalPrompt: originalPrompt,  // [修正]
-                        finalPrompt: finalPrompt,        // [修正]
+                        originalPrompt: originalPrompt,
+                        finalPrompt: finalPrompt,
                         base64Image: base64Image,
                         seed: seed,
                         timestamp: new Date().toISOString()
@@ -1397,7 +1374,6 @@
 
                 const result = await response.json();
 
-                // サムネイルと高解像度URLを両方取得
                 const thumbnailUrl = result.thumbnailUrl;
                 const fullImageUrl = result.fullImageUrl;
                 
@@ -1409,8 +1385,7 @@
                         Saved to Google Drive
                     `;
                     saveStatus.className = 'save-status success';
-
-                    // 両方のURLを履歴に追加
+                    
                     addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl);
 
                 } else {
@@ -1445,13 +1420,10 @@
             const overlay = document.getElementById('sidebarOverlay');
             const menuToggle = document.getElementById('menuToggle');
             
-            // モバイルかPCかで処理を分ける
             if (window.innerWidth <= 768) {
-                // モバイル：active クラスで制御
                 sidebar.classList.toggle('active');
                 overlay.classList.toggle('active');
             } else {
-                // PC：hidden クラスで制御
                 sidebar.classList.toggle('hidden');
             }
             
@@ -1459,7 +1431,6 @@
         }
 
         function closeSidebar() {
-            // モバイルのみで動作
             if (window.innerWidth <= 768) {
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
@@ -1477,28 +1448,25 @@
             document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
             document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
 
-            // [追加] プロンプト欄が手動編集されたら、翻訳前の記憶をリセット
+            // プロンプト欄が手動編集されたら、翻訳前の記憶をリセット
             document.getElementById('prompt').addEventListener('input', () => {
                 currentOriginalPrompt = null; 
             });
 
-            // [追加] Enter2回押し検出
+            // Enter2回押し検出
             document.getElementById('prompt').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault(); // デフォルトの改行を防ぐ
+                    e.preventDefault();
                     
                     const currentTime = Date.now();
                     const timeDiff = currentTime - lastEnterTime;
                     
-                    if (timeDiff < 500) { // 500ms以内の2回目のEnter
+                    if (timeDiff < 500) {
                         document.getElementById('inputHint').classList.remove('visible');
                         generateImage();
                     } else {
-                        // 1回目のEnter
                         lastEnterTime = currentTime;
                         document.getElementById('inputHint').classList.add('visible');
-                        
-                        // 500ms後にヒントを非表示
                         setTimeout(() => {
                             document.getElementById('inputHint').classList.remove('visible');
                         }, 2000);
@@ -1506,7 +1474,7 @@
                 }
             });
 
-            // [追加] リトライ設定のカスタム入力表示切り替え
+            // リトライ設定のカスタム入力表示切り替え
             document.getElementById('retryCount').addEventListener('change', function(e) {
                 const customInput = document.getElementById('customRetryCount');
                 if (e.target.value === 'custom') {
@@ -1520,13 +1488,20 @@
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('uploadArea');
                 const editModeInfo = document.getElementById('editModeInfo');
-                
+                const personaInputArea = document.getElementById('personaInputArea'); // [追加]
+
                 if (e.target.value === 'edit') {
                     uploadArea.style.display = 'block';
                     editModeInfo.classList.add('active');
+                    personaInputArea.style.display = 'none'; // [追加]
+                } else if (e.target.value === 'personal') { // [追加]
+                    uploadArea.style.display = 'none';
+                    editModeInfo.classList.remove('active');
+                    personaInputArea.style.display = 'block'; // [追加]
                 } else {
                     uploadArea.style.display = 'none';
                     editModeInfo.classList.remove('active');
+                    personaInputArea.style.display = 'none'; // [追加]
                 }
             });
 
@@ -1558,6 +1533,18 @@
                 }
             });
 
+            // [追加] ペルソナ入力欄をlocalStorageに自動保存
+            const personaInput = document.getElementById('personaInput');
+            personaInput.addEventListener('input', () => {
+                localStorage.setItem('customPersona', personaInput.value);
+            });
+
+            // [追加] ページ読み込み時にlocalStorageからペルソナを読み込む
+            const savedPersona = localStorage.getItem('customPersona');
+            if (savedPersona) {
+                personaInput.value = savedPersona;
+            }
+
             // 履歴と生成カウントを読み込む
             loadHistory();
             loadGenerationCount();
@@ -1568,13 +1555,11 @@
             const file = e.target.files[0];
             if (!file) return;
             
-            // ファイルサイズチェック (10MB)
             if (file.size > 10 * 1024 * 1024) {
                 alert('File size must be less than 10MB');
                 return;
             }
             
-            // ファイルタイプチェック
             if (!file.type.startsWith('image/')) {
                 alert('Please upload an image file');
                 return;
@@ -1585,7 +1570,6 @@
                 const base64 = e.target.result.split(',')[1];
                 uploadedImageBase64 = base64;
                 
-                // プレビュー表示
                 document.getElementById('uploadedImageThumb').src = e.target.result;
                 document.getElementById('uploadedImagePreview').classList.add('active');
             };
