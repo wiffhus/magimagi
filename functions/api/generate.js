@@ -506,7 +506,7 @@ export async function onRequestPost({ request, env }) {
                     ],
                     parameters: {
                         sampleCount: 1,
-                        temperature: 0.5 // [追加] 0.5に設定
+                        temperature: 0.0 // [追加] 0.5に設定
                     }
                 };
                 // ▲▲▲ [修正ここまで] ▲▲▲
