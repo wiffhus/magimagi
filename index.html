@@ -82,13 +82,67 @@
             margin-bottom: 16px;
         }
 
+        /* ▼▼▼ [修正] ラベルのマージンを変更 ▼▼▼ */
         label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 0; /* .input-header がマージンを持つため */
             color: #333;
             font-size: 13px;
             font-weight: 500;
         }
+        /* ▲▲▲ [修正ここまで] ▲▲▲ */
+
+
+        /* ▼▼▼ [ここから追加] ▼▼▼ */
+        /* [追加] 入力欄ヘッダー (ラベルとボタン) */
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        /* [追加] 入力欄アクションボタンコンテナ */
+        .input-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* [追加] アクションボタンのスタイル */
+        .action-btn {
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #f0f0f0;
+            border: 1px solid #c0c0c0;
+            border-radius: 3px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            /* [修正] buttonの基本スタイルを上書き */
+            flex: 0;
+            display: inline-block;
+            justify-content: initial;
+            gap: 0;
+        }
+
+        .action-btn:hover {
+            background: #e0e0e0;
+            border-color: #a0a0a0;
+        }
+
+        .action-btn.danger {
+            background: #fbebee;
+            border-color: #e57373;
+            color: #c62828;
+        }
+
+        .action-btn.danger:hover {
+            background: #ffcdd2;
+            border-color: #ef5350;
+        }
+        /* ▲▲▲ [追加ここまで] ▲▲▲ */
+
 
         textarea,
         select,
@@ -768,15 +822,22 @@
         </div>
         
         <div class="content">
+            
             <div class="input-group">
-                <label for="prompt">Prompt</label>
+                <div class="input-header">
+                    <label for="prompt">Prompt</label>
+                    <div class="input-actions">
+                        <button class="action-btn" onclick="selectAllText('prompt')">Select All</button>
+                        <button class="action-btn" onclick="copyText('prompt')">Copy</button>
+                        <button class="action-btn danger" onclick="clearText('prompt')">Clear</button>
+                    </div>
+                </div>
                 <textarea 
                     id="prompt" 
                     placeholder="Describe what you want to create..."
                 ></textarea>
                 <div class="input-hint" id="inputHint">Press Enter again to generate</div>
             </div>
-
             <div class="input-group">
                 <label for="styleMode">Style Mode</label>
                 <select id="styleMode">
@@ -791,11 +852,17 @@
             </div>
 
             <div class="input-group" id="personaInputArea" style="display: none;">
-                <label for="personaInput">Custom Persona</label>
+                <div class="input-header">
+                    <label for="personaInput">Custom Persona</label>
+                    <div class="input-actions">
+                        <button class="action-btn" onclick="selectAllText('personaInput')">Select All</button>
+                        <button class="action-btn" onclick="copyText('personaInput')">Copy</button>
+                        <button class="action-btn danger" onclick="clearText('personaInput')">Clear</button>
+                    </div>
+                </div>
                 <textarea id="personaInput" placeholder="e.g., A professional photographer, impressionist painter, etc." style="min-height: 60px;"></textarea>
                 <div class="input-hint" style="font-size: 11px; color: #999; margin-top: 4px; display: block;">Saved automatically in your browser.</div>
             </div>
-
             <div class="input-group">
                 <label for="retryCount">Auto Retry on Error</label>
                 <div class="retry-settings">
@@ -913,6 +980,42 @@
         let shouldStop = false;            
         let currentRetryCount = 0;         
 
+        // --- ▼▼▼ [ここから追加] ▼▼▼ ---
+        // テキストエリア操作関数
+        function selectAllText(elementId) {
+            const textarea = document.getElementById(elementId);
+            if (textarea) {
+                textarea.select();
+            }
+        }
+
+        function clearText(elementId) {
+            const textarea = document.getElementById(elementId);
+            if (textarea) {
+                textarea.value = '';
+                
+                // [重要] ペルソナ欄をクリアした場合はlocalStorageも更新
+                if (elementId === 'personaInput') {
+                    // inputイベントを手動で発火させ、localStorage保存リスナーをトリガーする
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+        }
+
+        function copyText(elementId) {
+            const textarea = document.getElementById(elementId);
+            if (textarea && textarea.value) {
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    // オプション: ここに "Copied!" などの一時的なフィードバックを追加可能
+                    console.log('Copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            }
+        }
+        // --- ▲▲▲ [追加ここまで] ▲▲▲ ---
+
+
         // LocalStorageから履歴を読み込む
         function loadHistory() {
             const saved = localStorage.getItem('imageHistory');
@@ -1022,6 +1125,7 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
 
         function formatDate(isoString) {
             const date = new Date(isoString);
@@ -1149,8 +1253,8 @@
                     body: JSON.stringify({
                         prompt: originalPrompt,
                         mode: mode,
-                        action: 'translate', // 翻訳アクションを明示
-                        persona: document.getElementById('personaInput').value // [追加]
+                        action: 'translate',
+                        persona: document.getElementById('personaInput').value
                     })
                 });
 
@@ -1162,7 +1266,7 @@
 
                 if (data.success && data.translatedPrompt) {
                     promptInput.value = data.translatedPrompt;
-                    currentOriginalPrompt = originalPrompt; // 翻訳元を保存
+                    currentOriginalPrompt = originalPrompt;
                 } else {
                     throw new Error('Invalid response from translation API.');
                 }
@@ -1190,7 +1294,7 @@
             const finalPrompt = document.getElementById('prompt').value.trim();
             const mode = document.getElementById('styleMode').value;
             const originalPrompt = currentOriginalPrompt || finalPrompt; 
-            currentOriginalPrompt = null; // 生成実行時にリセット
+            currentOriginalPrompt = null;
 
             const generateBtn = document.getElementById('generateBtn');
             const stopBtn = document.getElementById('stopBtn');
@@ -1248,7 +1352,7 @@
                 try {
                     if (currentRetryCount > 0) {
                         updateRetryCounter(currentRetryCount, maxRetries);
-                        await sleep(2000); // リトライ前に2秒待機
+                        await sleep(2000);
                     }
 
                     // Generate image via Cloudflare Pages Functions
@@ -1263,7 +1367,7 @@
                                 originalPrompt: originalPrompt,
                                 mode: mode,
                                 action: 'generate',
-                                persona: document.getElementById('personaInput').value // [追加]
+                                persona: document.getElementById('personaInput').value
                             };
                             if (mode === 'edit') {
                                 requestBody.inputImage = uploadedImageBase64;
@@ -1488,20 +1592,20 @@
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('uploadArea');
                 const editModeInfo = document.getElementById('editModeInfo');
-                const personaInputArea = document.getElementById('personaInputArea'); // [追加]
+                const personaInputArea = document.getElementById('personaInputArea');
 
                 if (e.target.value === 'edit') {
                     uploadArea.style.display = 'block';
                     editModeInfo.classList.add('active');
-                    personaInputArea.style.display = 'none'; // [追加]
-                } else if (e.target.value === 'personal') { // [追加]
+                    personaInputArea.style.display = 'none';
+                } else if (e.target.value === 'personal') {
                     uploadArea.style.display = 'none';
                     editModeInfo.classList.remove('active');
-                    personaInputArea.style.display = 'block'; // [追加]
+                    personaInputArea.style.display = 'block';
                 } else {
                     uploadArea.style.display = 'none';
                     editModeInfo.classList.remove('active');
-                    personaInputArea.style.display = 'none'; // [追加]
+                    personaInputArea.style.display = 'none';
                 }
             });
 
@@ -1533,13 +1637,13 @@
                 }
             });
 
-            // [追加] ペルソナ入力欄をlocalStorageに自動保存
+            // ペルソナ入力欄をlocalStorageに自動保存
             const personaInput = document.getElementById('personaInput');
             personaInput.addEventListener('input', () => {
                 localStorage.setItem('customPersona', personaInput.value);
             });
 
-            // [追加] ページ読み込み時にlocalStorageからペルソナを読み込む
+            // ページ読み込み時にlocalStorageからペルソナを読み込む
             const savedPersona = localStorage.getItem('customPersona');
             if (savedPersona) {
                 personaInput.value = savedPersona;
