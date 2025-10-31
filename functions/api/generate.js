@@ -221,7 +221,7 @@ Translated English Prompt:
     const payload = {
         contents: [{ parts: [{ text: translatorPrompt }] }],
         generationConfig: {
-            temperature: 0.5,
+            temperature: 1.5,
             maxOutputTokens: 1024
         },
         safetySettings: [
@@ -514,7 +514,7 @@ export async function onRequestPost({ request, env }) {
                     ],
                     parameters: {
                         sampleCount: 1,
-                        temperature: 0.5 // Imagen 3.0 の温度
+                        temperature: 0.0 // Imagen 3.0 の温度
                     }
                 };
 
@@ -586,7 +586,7 @@ export async function onRequestPost({ request, env }) {
                 ],
                 parameters: {
                     sampleCount: 1,
-                    temperature: 0.5 // Imagen 3.0 の温度
+                    temperature: 1.5 // Imagen 3.0 の温度
                 }
             };
 
