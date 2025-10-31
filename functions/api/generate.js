@@ -515,6 +515,7 @@ export async function onRequestPost({ request, env }) {
                     ],
                     parameters: {
                         sampleCount: 1
+                        temperature: 0.1
                     }
                 };
 
@@ -578,6 +579,7 @@ export async function onRequestPost({ request, env }) {
                 instances: [
                     {
                         prompt: finalPrompt 
+                        temperature: 1.2
                     }
                 ],
                 parameters: {
