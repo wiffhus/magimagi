@@ -11,16 +11,14 @@
             box-sizing: border-box;
         }
 
-        /* [変更] body全体をFlexboxレイアウトに変更 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
             background: #e8e8e8;
             min-height: 100vh;
             display: flex;
-            overflow: hidden; /* 2重スクロールバー防止 */
+            overflow: hidden;
         }
 
-        /* [追加] サイドバー */
         .sidebar {
             width: 280px;
             height: 100vh;
@@ -29,21 +27,18 @@
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
-            transition: margin-left 0.3s; /* PC版でもアニメーション追加 */
+            transition: margin-left 0.3s;
         }
 
         .sidebar.hidden {
             margin-left: -280px;
         }
 
-        /* [変更] メインコンテナ */
         .container {
-            flex: 1; /* 残りの領域をすべて使う */
+            flex: 1;
             background: #ffffff;
             height: 100vh;
-            overflow-y: auto; /* メインコンテンツだけスクロール */
-            
-            /* [変更] 中央配置スタイルを解除 */
+            overflow-y: auto;
             border: none;
             border-radius: 0;
             box-shadow: none;
@@ -58,8 +53,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            
-            /* [追加] スクロールしても追従 (オプション) */
             position: sticky;
             top: 0;
             z-index: 10;
@@ -71,7 +64,7 @@
             color: #333;
             flex: 1;
             text-align: center;
-            margin-left: 48px; /* ハンバーガーボタン分のオフセット */
+            margin-left: 48px;
         }
 
         .content {
@@ -82,16 +75,14 @@
             margin-bottom: 16px;
         }
 
-        /* [修正] ラベルのマージンを変更 */
         label {
             display: block;
-            margin-bottom: 0; /* .input-header がマージンを持つため */
+            margin-bottom: 0;
             color: #333;
             font-size: 13px;
             font-weight: 500;
         }
 
-        /* [追加] 入力欄ヘッダー (ラベルとボタン) */
         .input-header {
             display: flex;
             justify-content: space-between;
@@ -99,13 +90,11 @@
             margin-bottom: 6px;
         }
 
-        /* [追加] 入力欄アクションボタンコンテナ */
         .input-actions {
             display: flex;
             gap: 6px;
         }
 
-        /* [追加] アクションボタンのスタイル */
         .action-btn {
             padding: 2px 8px;
             font-size: 11px;
@@ -116,7 +105,6 @@
             color: #333;
             cursor: pointer;
             transition: all 0.2s;
-            /* [修正] buttonの基本スタイルを上書き */
             flex: 0;
             display: inline-block;
             justify-content: initial;
@@ -174,7 +162,6 @@
             box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
         }
 
-        /* [追加] リトライ設定グループ */
         .retry-settings {
             display: flex;
             gap: 8px;
@@ -248,7 +235,6 @@
             background: linear-gradient(180deg, #0066cc 0%, #0055aa 100%);
         }
 
-        /* [追加] 停止ボタンスタイル */
         button.danger {
             background: linear-gradient(180deg, #ff6b6b 0%, #dc3545 100%);
             color: white;
@@ -291,7 +277,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* [追加] 翻訳ボタンのスピナー用 */
         .btn-spinner {
             width: 16px;
             height: 16px;
@@ -300,9 +285,9 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0;
-            display: inline-block; /* ボタン内でテキストと並べる */
+            display: inline-block;
             vertical-align: middle;
-            margin-right: 6px; /* テキストとの間隔 */
+            margin-right: 6px;
         }
 
         .loading-text {
@@ -310,7 +295,6 @@
             color: #666;
         }
 
-        /* [追加] リトライカウンター */
         .retry-counter {
             font-size: 11px;
             color: #999;
@@ -335,9 +319,9 @@
             border-radius: 4px;
             border: 1px solid #b0b0b0;
             margin-bottom: 12px;
+            cursor: pointer; /* [修正] 生成画像をクリックして編集できるように */
         }
 
-        /* [追加] プロンプト表示エリア */
         .prompt-display {
             background: #fff;
             border: 1px solid #d0d0d0;
@@ -457,7 +441,6 @@
             background: #0055aa;
         }
 
-        /* [追加] サイドバーのヘッダー */
         .sidebar-header {
             padding: 16px;
             border-bottom: 1px solid #d0d0d0;
@@ -477,7 +460,6 @@
             margin-bottom: 8px;
         }
 
-        /* [追加] コスト計算表示 */
         .cost-display {
             font-size: 11px;
             color: #666;
@@ -502,7 +484,6 @@
             color: #333;
         }
 
-        /* [追加] 履歴リスト */
         .history-container {
             flex: 1;
             overflow-y: auto;
@@ -588,11 +569,10 @@
             color: white;
         }
 
-        /* [追加] ハンバーガーメニューボタン */
         .menu-toggle {
             width: 32px;
             height: 32px;
-            display: flex; /* PC版でも表示 */
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -602,7 +582,7 @@
             cursor: pointer;
             padding: 0;
             position: absolute;
-            left: 16px; /* 左側に配置 */
+            left: 16px;
         }
 
         .menu-toggle span {
@@ -624,7 +604,6 @@
             transform: rotate(-45deg) translate(3px, -3px);
         }
 
-        /* [追加] オーバーレイ */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -640,7 +619,6 @@
             display: block;
         }
 
-        /* [追加] レスポンシブ対応 */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -665,19 +643,18 @@
             }
         }
 
-        /* Enter2回押しのヒント表示 */
         .input-hint {
             font-size: 11px;
             color: #999;
             margin-top: 4px;
-            display: none; /* デフォルト非表示 */
+            display: none;
         }
 
         .input-hint.visible {
             display: block;
         }
 
-        /* [追加] 画像編集モードのアップロード関連 */
+        /* --- [修正] 編集モードのスタイル --- */
         .upload-area {
             border: 2px dashed #b0b0b0;
             border-radius: 4px;
@@ -766,7 +743,6 @@
             background: white;
         }
 
-        /* [追加] 画像編集モードの説明 */
         .edit-mode-info {
             background: #fff3e0;
             border: 1px solid #ffcc80;
@@ -781,6 +757,86 @@
         .edit-mode-info.active {
             display: block;
         }
+
+        /* --- ▼▼▼ [ここから追加] マスク編集UIのスタイル ▼▼▼ --- */
+        .canvas-container {
+            display: none; /* Editモード以外では非表示 */
+            margin-bottom: 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background: #f8f8f8;
+            padding: 12px;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            /* アスペクト比 1:1 を維持 (max-widthで制御) */
+            max-width: 512px; 
+            margin: 0 auto;
+            border: 1px solid #b0b0b0;
+            background-color: #fff;
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%), linear-gradient(-45deg, #eee 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #eee 75%), linear-gradient(-45deg, transparent 75%, #eee 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        #editCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        #editCanvasBackground {
+            width: 100%;
+            display: block; /* canvasの下の隙間を消す */
+        }
+
+        .canvas-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #d0d0d0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .brush-slider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .brush-slider label {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+        
+        .brush-slider input[type="range"] {
+            flex: 1;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .canvas-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .canvas-buttons button {
+            flex: 0; /* 均等幅にしない */
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+        /* --- ▲▲▲ [追加ここまで] --- */
+
     </style>
 </head>
 <body>
@@ -842,8 +898,7 @@
                     <option value="mummy">Mummy (90s Snapshot)</option>
                     <option value="pri">Pri (Purikura Style)</option>
                     <option value="pro">Pro (Advanced)</option>
-                    <option value="edit">Edit (Image-to-Image)</option>
-                    <option value="personal">Personal (Template)</option>
+                    <option value="edit">Edit (Inpainting)</option> <option value="personal">Personal (Template)</option>
                 </select>
             </div>
 
@@ -871,6 +926,8 @@
                 
                 <div class="input-hint" style="font-size: 11px; color: #999; margin-top: 4px; display: block;">Saved automatically in your browser.</div>
             </div>
+
+
             <div class="input-group">
                 <label for="retryCount">Auto Retry on Error</label>
                 <div class="retry-settings">
@@ -894,7 +951,7 @@
             </div>
 
             <div class="edit-mode-info" id="editModeInfo">
-                Upload an image and describe the edits you want to make.
+                Upload an image, draw a mask over the area you want to edit, and describe the changes.
             </div>
 
             <div class="upload-area" id="uploadArea" style="display: none;">
@@ -908,14 +965,22 @@
                 <input type="file" id="imageUpload" accept="image/*" style="display: none;">
             </div>
 
-            <div class="uploaded-image-preview" id="uploadedImagePreview">
-                <div class="uploaded-image-header">
-                    <span class="uploaded-image-title">Uploaded Image</span>
-                    <button class="remove-upload-btn" onclick="removeUploadedImage()">Remove</button>
+            <div class="canvas-container" id="editCanvasContainer">
+                <div class="canvas-wrapper">
+                    <img id="editCanvasBackground" src="" alt="Editing background">
+                    <canvas id="editCanvas"></canvas>
                 </div>
-                <img class="uploaded-image-thumb" id="uploadedImageThumb" alt="Uploaded image">
+                <div class="canvas-controls">
+                    <div class="brush-slider">
+                        <label for="brushSize">Brush:</label>
+                        <input type="range" id="brushSize" min="5" max="100" value="40">
+                    </div>
+                    <div class="canvas-buttons">
+                        <button id="undoMaskBtn">Undo</button>
+                        <button id="clearMaskBtn" class="danger">Clear Mask</button>
+                    </div>
+                </div>
             </div>
-
             <div class="button-group">
                 <button id="translateBtn" onclick="translatePrompt()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -951,7 +1016,7 @@
             </div>
 
             <div class="result" id="result">
-                <img id="generatedImage" alt="Generated image">
+                <img id="generatedImage" alt="Generated image" title="Click to edit this image">
                 
                 <div class="prompt-display" id="promptDisplay" style="display: none;">
                     <div class="prompt-display-label">Translated/Final Prompt</div>
@@ -973,10 +1038,12 @@
         </div>
     </div>
 
+    <canvas id="maskCanvas" style="display: none;"></canvas>
+
     <script>
         // グローバル変数
         let currentSeed = null;
-        let uploadedImageBase64 = null;
+        let uploadedImageBase64 = null; // [修正] これは「編集の元画像」として保持
         let history = [];
         let generationCount = 0;
         let currentOriginalPrompt = null;
@@ -986,9 +1053,18 @@
         const USD_TO_JPY = 150;            
         let isGenerating = false;          
         let shouldStop = false;            
-        let currentRetryCount = 0;         
+        let currentRetryCount = 0;
 
-        // --- [追加] ---
+        // --- ▼▼▼ [ここから追加] マスク編集用グローバル変数 ▼▼▼ ---
+        let editCanvas, ctx, maskCanvas, maskCtx;
+        let isDrawing = false;
+        let brushSize = 40;
+        let maskHistory = []; // Undo用
+        let currentPath = [];
+        // --- ▲▲▲ [追加ここまで] ---
+
+
+        // --- [修正] ---
         // テキストエリア操作関数
         function selectAllText(elementId) {
             const textarea = document.getElementById(elementId);
@@ -1001,7 +1077,6 @@
             const textarea = document.getElementById(elementId);
             if (textarea) {
                 textarea.value = '';
-                // [修正] inputイベントを手動で発火させ、localStorage保存リスナーをトリガーする
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
@@ -1016,7 +1091,7 @@
                 });
             }
         }
-        // --- [追加ここまで] ---
+        // --- [修正ここまで] ---
 
 
         // LocalStorageから履歴を読み込む
@@ -1168,12 +1243,7 @@
             });
         }
         
-        // アップロード画像削除
-        function removeUploadedImage() {
-            uploadedImageBase64 = null;
-            document.getElementById('imageUpload').value = '';
-            document.getElementById('uploadedImagePreview').classList.remove('active');
-        }
+        // [削除] 古い removeUploadedImage は不要
 
         // リトライ回数を取得
         function getRetryCount() {
@@ -1253,15 +1323,13 @@
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // ▼▼▼ [修正] ▼▼▼
                     body: JSON.stringify({
                         prompt: originalPrompt,
                         mode: mode,
                         action: 'translate',
-                        personalPrefix: document.getElementById('personalPrefix').value, // [修正]
-                        personalSuffix: document.getElementById('personalSuffix').value  // [修正]
+                        personalPrefix: document.getElementById('personalPrefix').value,
+                        personalSuffix: document.getElementById('personalSuffix').value
                     })
-                    // ▲▲▲ [修正ここまで] ▲▲▲
                 });
 
                 const data = await response.json();
@@ -1292,6 +1360,226 @@
                 `;
             }
         }
+
+        // --- ▼▼▼ [ここから修正] マスク編集関数 ▼▼▼ ---
+
+        /**
+         * [新設] キャンバスとイベントを初期化
+         */
+        function initializeEditCanvas() {
+            editCanvas = document.getElementById('editCanvas');
+            ctx = editCanvas.getContext('2d');
+            maskCanvas = document.getElementById('maskCanvas'); // 非表示の変換用キャンバス
+            maskCtx = maskCanvas.getContext('2d');
+
+            const brushSlider = document.getElementById('brushSize');
+            brushSlider.addEventListener('input', (e) => {
+                brushSize = e.target.value;
+            });
+
+            document.getElementById('undoMaskBtn').addEventListener('click', undoMask);
+            document.getElementById('clearMaskBtn').addEventListener('click', clearMask);
+
+            // 描画イベント
+            editCanvas.addEventListener('mousedown', startDrawing);
+            editCanvas.addEventListener('mouseup', stopDrawing);
+            editCanvas.addEventListener('mouseleave', stopDrawing);
+            editCanvas.addEventListener('mousemove', drawMask);
+            // タッチイベント
+            editCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+            editCanvas.addEventListener('touchend', stopDrawing, { passive: false });
+            editCanvas.addEventListener('touchmove', drawMask, { passive: false });
+        }
+
+        /**
+         * [新設] 編集する画像をキャンバスにセットする
+         */
+        function setCanvasImage(src) {
+            const bgImg = document.getElementById('editCanvasBackground');
+            const container = document.getElementById('editCanvasContainer');
+            
+            // Base64ソースか、(履歴からの)URLソースか
+            const imgSrc = (src.startsWith('data:')) ? src : src.split('&sz=')[0]; // URLからサイズ指定を除去
+            
+            bgImg.src = imgSrc;
+            
+            // 画像の読み込みを待ってキャンバスのサイズを決定
+            bgImg.onload = () => {
+                // 元画像の縦横比を維持
+                const aspectRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+                const wrapper = document.querySelector('.canvas-wrapper');
+                
+                // wrapperの幅は100% (max 512px)
+                const width = wrapper.clientWidth;
+                const height = width / aspectRatio;
+
+                wrapper.style.height = `${height}px`;
+
+                // 描画キャンバスとマスク変換用キャンバスの解像度を背景画像に合わせる
+                editCanvas.width = bgImg.naturalWidth;
+                editCanvas.height = bgImg.naturalHeight;
+                maskCanvas.width = bgImg.naturalWidth;
+                maskCanvas.height = bgImg.naturalHeight;
+                
+                // 描画キャンバスの表示サイズはCSSで100%x100%に設定されている
+                
+                // 元画像(Base64)も変数に保存
+                if (src.startsWith('data:')) {
+                    uploadedImageBase64 = src.split(',')[1];
+                } else {
+                    // URLからBase64を再生成 (CORSに注意。履歴画像はGoogle DriveなのでOK)
+                    // 一時キャンバスを使ってBase64を生成
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = bgImg.naturalWidth;
+                    tempCanvas.height = bgImg.naturalHeight;
+                    tempCtx.drawImage(bgImg, 0, 0);
+                    uploadedImageBase64 = tempCanvas.toDataURL('image/png').split(',')[1];
+                }
+
+                clearMask(); // 新しい画像をセットしたらマスクをクリア
+                container.style.display = 'block';
+            };
+            bgImg.onerror = () => {
+                console.error("Failed to load image to canvas.");
+                uploadedImageBase64 = null;
+            }
+        }
+
+        // [新設] マウス/タッチの座標を取得
+        function getPaintPosition(e) {
+            const rect = editCanvas.getBoundingClientRect();
+            let x, y;
+
+            if (e.touches) {
+                e.preventDefault(); // スクロールを防ぐ
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+
+            // キャンバスの実際の解像度に対する相対座標に変換
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+
+            return {
+                x: (x - rect.left) * scaleX,
+                y: (y - rect.top) * scaleY
+            };
+        }
+        
+        // [新設] 描画開始
+        function startDrawing(e) {
+            isDrawing = true;
+            currentPath = []; // 新しいパスを開始
+            const pos = getPaintPosition(e);
+            currentPath.push(pos);
+            drawMask(e); // 開始点にも点を描画
+        }
+
+        // [新設] 描画中
+        function drawMask(e) {
+            if (!isDrawing) return;
+            const pos = getPaintPosition(e);
+            currentPath.push(pos);
+
+            ctx.globalCompositeOperation = 'source-over'; // 通常の描画
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // マスクの色 (半透明の黒)
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.lineWidth = brushSize * (editCanvas.width / editCanvas.clientWidth); // 解像度に合わせたブラシサイズ
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // スムーズな線を描画
+            if (currentPath.length < 2) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(currentPath[0].x, currentPath[0].y);
+            
+            for (let i = 1; i < currentPath.length - 2; i++) {
+                const c = (currentPath[i].x + currentPath[i + 1].x) / 2;
+                const d = (currentPath[i].y + currentPath[i + 1].y) / 2;
+                ctx.quadraticCurveTo(currentPath[i].x, currentPath[i].y, c, d);
+            }
+            
+            // 最後の2点
+            if(currentPath.length > 1) {
+                const i = currentPath.length - 2;
+                ctx.quadraticCurveTo(
+                    currentPath[i].x,
+                    currentPath[i].y,
+                    currentPath[i+1].x,
+                    currentPath[i+1].y
+                );
+            }
+            
+            ctx.stroke();
+        }
+
+        // [新設] 描画終了
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            // 現在のパスを履歴に追加
+            maskHistory.push(ctx.getImageData(0, 0, editCanvas.width, editCanvas.height));
+        }
+
+        // [新設] マスクを元に戻す
+        function undoMask() {
+            maskHistory.pop(); // 最後の状態を削除
+            clearMask(false); // 履歴をクリアせずにキャンバスだけクリア
+
+            if (maskHistory.length > 0) {
+                // 最後の有効な状態を復元
+                ctx.putImageData(maskHistory[maskHistory.length - 1], 0, 0);
+            }
+        }
+        
+        // [新設] マスクをクリア
+        function clearMask(clearHistory = true) {
+            ctx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            if (clearHistory) {
+                maskHistory = [];
+            }
+        }
+
+        /**
+         * [新設] API送信用にマスクデータ(Base64)を取得
+         * APIは「マスク領域が白、非マスク領域が黒」の画像を要求すると想定
+         */
+        function getMaskData() {
+            const imageData = ctx.getImageData(0, 0, editCanvas.width, editCanvas.height);
+            const data = imageData.data;
+            
+            // 描画されたピクセル（アルファ > 0）を白に、他を黒にする
+            for (let i = 0; i < data.length; i += 4) {
+                const alpha = data[i + 3];
+                if (alpha > 0) {
+                    // マスク領域 (白)
+                    data[i] = 255;
+                    data[i + 1] = 255;
+                    data[i + 2] = 255;
+                    data[i + 3] = 255;
+                } else {
+                    // 非マスク領域 (黒)
+                    data[i] = 0;
+                    data[i + 1] = 0;
+                    data[i + 2] = 0;
+                    data[i + 3] = 255;
+                }
+            }
+            
+            // 非表示キャンバスに白黒マスクを描画
+            maskCtx.putImageData(imageData, 0, 0);
+            
+            // Base64 PNGとしてエクスポート
+            return maskCanvas.toDataURL('image/png').split(',')[1];
+        }
+
+        // --- ▲▲▲ [修正ここまで] ---
+
 
         /**
          * 生成ボタンの処理
@@ -1326,6 +1614,7 @@
                 return;
             }
 
+            // [修正] editモードのバリデーション
             if (mode === 'edit' && !uploadedImageBase64) {
                 errorText.textContent = 'Please upload an image for Edit mode.';
                 error.classList.add('active');
@@ -1346,7 +1635,7 @@
             if (mode === 'pro') {
                 loadingText.textContent = 'Optimizing prompt (Pro)...';
             } else if (mode === 'edit') {
-                loadingText.textContent = 'Editing image...';
+                loadingText.textContent = 'Editing image (Inpainting)...'; // [修正]
             } else {
                 loadingText.textContent = 'Generating image...';
             }
@@ -1367,18 +1656,19 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        // ▼▼▼ [修正] ▼▼▼
+                        // ▼▼▼ [修正] 'edit' モード時に maskImage も送信 ▼▼▼
                         body: JSON.stringify((function() {
                             const requestBody = {
                                 prompt: finalPrompt,
                                 originalPrompt: originalPrompt,
                                 mode: mode,
                                 action: 'generate',
-                                personalPrefix: document.getElementById('personalPrefix').value, // [修正]
-                                personalSuffix: document.getElementById('personalSuffix').value  // [修正]
+                                personalPrefix: document.getElementById('personalPrefix').value,
+                                personalSuffix: document.getElementById('personalSuffix').value
                             };
                             if (mode === 'edit') {
-                                requestBody.inputImage = uploadedImageBase64;
+                                requestBody.inputImage = uploadedImageBase64; // 元画像
+                                requestBody.maskImage = getMaskData(); // マスク画像
                             }
                             return requestBody;
                         })()),
@@ -1387,7 +1677,7 @@
 
                     if (shouldStop) break;
 
-                    loadingText.textContent = 'Generating image...';
+                    loadingText.textContent = 'Generating image...'; // [修正] 'Generating image...' に戻す
 
                     const data = await response.json();
 
@@ -1411,6 +1701,21 @@
                     const img = document.getElementById('generatedImage');
                     img.src = `data:image/png;base64,${data.base64Image}`;
                     result.classList.add('active');
+
+                    // --- ▼▼▼ [ここから追加] ▼▼▼
+                    // [追加] 生成した画像を、クリックで編集キャンバスに送る
+                    img.onclick = () => {
+                        setCanvasImage(img.src);
+                        // スクロールしてキャンバスを表示
+                        document.getElementById('editCanvasContainer').scrollIntoView({ behavior: 'smooth' });
+                    };
+                    
+                    // [追加] Editモードで生成した場合、自動で編集キャンバスにセットする
+                    if (mode === 'edit') {
+                        setCanvasImage(img.src);
+                    }
+                    // --- ▲▲▲ [追加ここまで] ---
+
 
                     document.getElementById('seedValue').textContent = currentSeed;
                     seedDisplay.classList.add('active');
@@ -1597,26 +1902,31 @@
                 }
             });
 
+            // --- ▼▼▼ [ここから修正] ▼▼▼
             // Style Mode変更時の処理
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('uploadArea');
                 const editModeInfo = document.getElementById('editModeInfo');
-                const personalModeArea = document.getElementById('personalModeArea'); // [修正]
+                const personalModeArea = document.getElementById('personalModeArea');
+                const editCanvasContainer = document.getElementById('editCanvasContainer'); // [追加]
+
+                // すべて非表示にリセット
+                uploadArea.style.display = 'none';
+                editModeInfo.classList.remove('active');
+                personalModeArea.style.display = 'none';
+                editCanvasContainer.style.display = 'none';
 
                 if (e.target.value === 'edit') {
-                    uploadArea.style.display = 'block';
-                    editModeInfo.classList.add('active');
-                    personalModeArea.style.display = 'none'; // [修正]
-                } else if (e.target.value === 'personal') { // [修正]
-                    uploadArea.style.display = 'none';
-                    editModeInfo.classList.remove('active');
-                    personalModeArea.style.display = 'block'; // [修正]
-                } else {
-                    uploadArea.style.display = 'none';
-                    editModeInfo.classList.remove('active');
-                    personalModeArea.style.display = 'none'; // [修正]
+                    uploadArea.style.display = 'block'; // 画像アップロードは表示
+                    editModeInfo.classList.add('active'); // 説明文を表示
+                    if (uploadedImageBase64) { // もし画像が既にあればキャンバスも表示
+                        editCanvasContainer.style.display = 'block';
+                    }
+                } else if (e.target.value === 'personal') {
+                    personalModeArea.style.display = 'block';
                 }
             });
+            // --- ▲▲▲ [修正ここまで] ▲▲▲
 
             // ファイルアップロード
             const uploadArea = document.getElementById('uploadArea');
@@ -1647,7 +1957,6 @@
             });
 
 
-            // --- ▼▼▼ [ここから修正] ▼▼▼ ---
             // [修正] ペルソナ入力欄 (Prefix) をlocalStorageに自動保存
             const personalPrefixInput = document.getElementById('personalPrefix');
             personalPrefixInput.addEventListener('input', () => {
@@ -1669,15 +1978,17 @@
             if (savedSuffix) {
                 personalSuffixInput.value = savedSuffix;
             }
-            // --- ▲▲▲ [修正ここまで] ▲▲▲ ---
 
+            // [追加] マスク編集キャンバスを初期化
+            initializeEditCanvas();
 
             // 履歴と生成カウントを読み込む
             loadHistory();
             loadGenerationCount();
         });
 
-        // ファイルアップロード処理
+        // --- ▼▼▼ [ここから修正] ファイルアップロード処理 ▼▼▼ ---
+        // [修正] ファイルアップロード処理 (キャンバスに画像をセット)
         function handleFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -1694,14 +2005,13 @@
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                const base64 = e.target.result.split(',')[1];
-                uploadedImageBase64 = base64;
-                
-                document.getElementById('uploadedImageThumb').src = e.target.result;
-                document.getElementById('uploadedImagePreview').classList.add('active');
+                const dataUrl = e.target.result;
+                // [修正] setCanvasImage を呼び出して、画像をキャンバスにセット
+                setCanvasImage(dataUrl); 
             };
             reader.readAsDataURL(file);
         }
+        // --- ▲▲▲ [修正ここまで] ▲▲▲
     </script>
 </body>
 </html>
