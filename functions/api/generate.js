@@ -1,8 +1,6 @@
 // functions/api/generate.js
 // Cloudflare Pages Functions for Imagen 3.0 API & Gemini Flash Preview Image
-// [変更] 'Personal' モードを追加
-// [修正] 翻訳・編集関数 (translateProPrompt, editImageWithGemini, isEnglish, translateToEnglish) を復元
-// [修正] API呼び出しのコメントアウトを解除
+// [修正] 'action: generate' 時にも 'Personal' モードのペルソナが適用されるように修正
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -305,7 +303,7 @@ export async function onRequestPost({ request, env }) {
             mode, 
             inputImage, 
             action,
-            persona // [追加]
+            persona
         } = await request.json();
         
         
@@ -403,7 +401,7 @@ export async function onRequestPost({ request, env }) {
                     case 'pro':
                         finalPrompt = await translateProPrompt(originalPromptForTranslate, API_KEY);
                         break;
-                    case 'personal': // [追加]
+                    case 'personal':
                         // "persona" が入力されていれば、翻訳済みプロンプトの先頭に追加
                         if (persona && persona.trim() !== '') {
                             finalPrompt = `${persona.trim()}, ${translatedPrompt}`;
@@ -437,9 +435,24 @@ export async function onRequestPost({ request, env }) {
         }
 
         // --- [修正] 生成アクション (Generateボタン) ---
-        // (action === 'translate' 以外は、生成アクションとして扱われる)
         
-        const finalPrompt = prompt; // 'prompt' には既に翻訳/処理済みのプロンプトが入っている想定
+        let finalPrompt = prompt; // 'prompt' には既に翻訳/処理済みのプロンプトが入っている想定
+        
+        // ▼▼▼ [ここが修正点！] ▼▼▼
+        // Generate直押し（Translateスキップ）の場合のペルソナ適用
+        // Translateボタンを押した場合、'prompt' には既にペルソナが含まれている (e.g., "Persona, translated text")
+        // しかし、Translateをスキップした場合、'prompt' にはペルソナが含まれていない (e.g., "a cat sleeping")
+        // そのため、'prompt' が 'persona' で始まっていないかチェックし、始まっていなければペルソナを先頭に追加する
+        if (mode === 'personal' && persona && persona.trim() !== '') {
+            const trimmedPersona = persona.trim();
+            // finalPrompt (e.g., "a cat sleeping") がペルソナ (e.g., "A professional photographer") で始まっていないことを確認
+            // ※小文字に統一して比較
+            if (!finalPrompt.toLowerCase().startsWith(trimmedPersona.toLowerCase())) {
+                finalPrompt = `${trimmedPersona}, ${finalPrompt}`;
+            }
+        }
+        // ▲▲▲ [修正ここまで] ▲▲▲
+        
         const originalPrompt = originalPromptFromClient || finalPrompt; // 翻訳元のプロンプト
 
         // [修正] 編集モードの処理
@@ -465,6 +478,7 @@ export async function onRequestPost({ request, env }) {
 
             try {
                 // 1. Gemini Flashでプロンプトを分析・編集
+                // (注意: 現在の実装では、EditモードとPersonalモードは併用されません)
                 const analysisResult = await editImageWithGemini(finalPrompt, inputImage, API_KEY_EDIT);
                 
                 // 2. Imagen 3.0で画像を生成（ローテーションされたAPI_KEYを使用）
@@ -490,7 +504,6 @@ export async function onRequestPost({ request, env }) {
                 const imagenResponseText = await imagenResponse.text();
                 let imagenResult;
                 
-                // [修正] APIレスポンスのパースとエラーハンドリングを復元
                 try {
                     imagenResult = JSON.parse(imagenResponseText);
                 } catch (e) {
@@ -541,6 +554,8 @@ export async function onRequestPost({ request, env }) {
             const payload = {
                 instances: [
                     {
+                        // ここで渡される 'finalPrompt' は、
+                        // この関数の冒頭でペルソナが追加された（かもしれない）もの
                         prompt: finalPrompt 
                     }
                 ],
@@ -558,7 +573,6 @@ export async function onRequestPost({ request, env }) {
             const responseText = await geminiResponse.text();
             let geminiResult;
             
-            // [修正] APIレスポンスのパースとエラーハンドリングを復元
             try {
                 geminiResult = JSON.parse(responseText);
             } catch (e) {
@@ -574,7 +588,7 @@ export async function onRequestPost({ request, env }) {
                 return new Response(JSON.stringify({ 
                     base64Image: base64Image,
                     success: true,
-                    finalPrompt: finalPrompt,
+                    finalPrompt: finalPrompt, // ペルソナが追加された最終プロンプトを返す
                     originalPrompt: originalPrompt 
                 }), {
                     headers: { 'Content-Type': 'application/json' },
