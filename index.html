@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>muGen</title>
     <style>
         * {
@@ -391,55 +391,9 @@
             height: 16px;
         }
 
-        .seed-display {
-            display: none;
-            background: #f0f8ff;
-            border: 1px solid #b0d4ff;
-            border-radius: 4px;
-            padding: 8px 12px;
-            margin-bottom: 12px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .seed-display.active {
-            display: flex;
-        }
-
-        .seed-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #0066cc;
-        }
-
-        .seed-label {
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .seed-value {
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-            font-weight: 500;
-        }
-
-        .seed-copy-btn {
-            padding: 4px 8px;
-            background: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .seed-copy-btn:hover {
-            background: #0055aa;
-        }
+        /* [削除] SEED表示エリアは不要
+        .seed-display { ... }
+        */
 
         .sidebar-header {
             padding: 16px;
@@ -838,7 +792,7 @@
             font-size: 12px;
         }
         
-        /* --- ▼▼▼ [ここから追加] PRO-DETAILモード用スタイル ▼▼▼ --- */
+        /* --- PRO-DETAILモード用スタイル --- */
         .pro-inputs-grid {
             display: flex;
             flex-wrap: wrap; /* モバイル対応 */
@@ -929,12 +883,9 @@
             margin-bottom: 6px;
         }
 
-        .pro-step-meta {
-            font-size: 11px;
-            color: #999;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-        }
-        /* --- ▲▲▲ [追加ここまで] --- */
+        /* [削除] SEED表示は不要
+        .pro-step-meta { ... }
+        */
 
     </style>
 </head>
@@ -999,7 +950,8 @@
                     <option value="pro">Pro (Advanced)</option>
                     <option value="edit">Edit (Inpainting)</option>
                     <option value="personal">Personal (Template)</option>
-                    <option value="pro-detail">PRO-DETAIL (Step Editing)</option> </select>
+                    <option value="pro-detail">PRO-DETAIL (Step Editing)</option>
+                </select>
             </div>
 
             <div class="input-group" id="personalModeArea" style="display: none;">
@@ -1028,10 +980,6 @@
 
             <div id="proDetailArea" style="display: none;">
                 <div class="pro-inputs-grid">
-                    <div class="input-group" style="flex: 1;">
-                        <label for="proSeed">Seed (Optional)</label>
-                        <input type="number" id="proSeed" placeholder="Leave empty for random">
-                    </div>
                     <div class="input-group" style="flex: 1;">
                         <label for="proAspectRatio">Aspect Ratio</label>
                         <select id="proAspectRatio">
@@ -1107,12 +1055,14 @@
                             <input type="checkbox" id="style_disney" value="Disney style (Pixar animation)">
                             <label for="style_disney">Disney</label>
                         </div>
-                        </div>
+                    </div>
                 </div>
                 
                 <div id="proStepsContainer" class="pro-steps-container">
                     </div>
             </div>
+
+
             <div class="input-group">
                 <label for="retryCount">Auto Retry on Error</label>
                 <div class="retry-settings">
@@ -1209,14 +1159,6 @@
                     <div class="prompt-display-text" id="finalPromptText"></div>
                 </div>
 
-                <div class="seed-display" id="seedDisplay">
-                    <div class="seed-info">
-                        <span class="seed-label">Seed:</span>
-                        <span class="seed-value" id="seedValue"></span>
-                    </div>
-                    <button class="seed-copy-btn" onclick="copySeed()">Copy</button>
-                </div>
-                
                 <div class="save-status" id="saveStatus"></div>
                 
                 <button onclick="closeImage()">Close</button>
@@ -1227,8 +1169,7 @@
     <canvas id="maskCanvas" style="display: none;"></canvas>
 
     <script>
-        // グローバル変数
-        let currentSeed = null;
+        // [削除] currentSeed は不要
         let uploadedImageBase64 = null;
         let history = [];
         let generationCount = 0;
@@ -1297,14 +1238,14 @@
         }
 
         // 履歴に追加
-        function addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl) {
+        function addToHistory(originalPrompt, finalPrompt, thumbnailUrl, fullImageUrl) { // [修正] seed削除
             const historyItem = {
                 id: Date.now(),
                 originalPrompt: originalPrompt,
                 finalPrompt: finalPrompt,
                 thumbnailUrl: thumbnailUrl,
                 fullImageUrl: fullImageUrl || thumbnailUrl,
-                seed: seed,
+                // [削除] seed: seed,
                 timestamp: new Date().toISOString()
             };
             
@@ -1340,8 +1281,7 @@
                         <div class="history-time">${formatDate(item.timestamp)}</div>
                         <div class="history-actions">
                             <button class="history-action-btn" onclick="regenerateFromHistory('${item.id}')">Regenerate</button>
-                            <button class="history-action-btn" onclick="variationFromHistory('${item.id}')">Variation</button>
-                        </div>
+                            </div>
                     </div>
                 </div>
             `).join('');
@@ -1375,10 +1315,7 @@
             window.open(url, '_blank');
         }
 
-        // Seedをランダム生成
-        function generateRandomSeed() {
-            return Math.floor(Math.random() * 1000000000);
-        }
+        // [削除] generateRandomSeed() は不要
 
         // HTMLエスケープ
         function escapeHtml(text) {
@@ -1411,23 +1348,17 @@
             generateImage();
         }
 
+        /* [削除] variationFromHistory は SEED がないと困難
         function variationFromHistory(id) {
-            const item = history.find(h => h.id === parseInt(id));
-            if (!item) return;
-
-            document.getElementById('prompt').value = item.originalPrompt || item.finalPrompt;
-            generateImage();
+            ...
         }
+        */
 
+        /* [削除] copySeed は不要
         function copySeed() {
-            if (!currentSeed) return;
-            navigator.clipboard.writeText(currentSeed.toString()).then(() => {
-                const btn = document.querySelector('.seed-copy-btn');
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = originalText, 1500);
-            });
+            ...
         }
+        */
         
         // リトライ回数を取得
         function getRetryCount() {
@@ -1504,7 +1435,6 @@
             `;
 
             try {
-                // [修正] PRO-DETAIL モードのスタイルも送信
                 const requestBody = {
                     prompt: originalPrompt,
                     mode: mode,
@@ -1553,55 +1483,36 @@
             }
         }
 
-        // --- マスク編集関数 ---
-
-        /**
-         * キャンバスとイベントを初期化
-         */
+        // --- マスク編集関数 (変更なし) ---
         function initializeEditCanvas() {
             editCanvas = document.getElementById('editCanvas');
             ctx = editCanvas.getContext('2d');
-            maskCanvas = document.getElementById('maskCanvas'); // 非表示の変換用キャンバス
+            maskCanvas = document.getElementById('maskCanvas');
             maskCtx = maskCanvas.getContext('2d');
-
             const brushSlider = document.getElementById('brushSize');
             brushSlider.addEventListener('input', (e) => {
                 brushSize = e.target.value;
             });
-
             document.getElementById('undoMaskBtn').addEventListener('click', undoMask);
             document.getElementById('clearMaskBtn').addEventListener('click', clearMask);
-
-            // 描画イベント
             editCanvas.addEventListener('mousedown', startDrawing);
             editCanvas.addEventListener('mouseup', stopDrawing);
             editCanvas.addEventListener('mouseleave', stopDrawing);
             editCanvas.addEventListener('mousemove', drawMask);
-            // タッチイベント
             editCanvas.addEventListener('touchstart', startDrawing, { passive: false });
             editCanvas.addEventListener('touchend', stopDrawing, { passive: false });
             editCanvas.addEventListener('touchmove', drawMask, { passive: false });
         }
-
-        /**
-         * 編集する画像をキャンバスにセットする
-         */
         function setCanvasImage(src) {
             const bgImg = document.getElementById('editCanvasBackground');
             const container = document.getElementById('editCanvasContainer');
-            
             const imgSrc = (src.startsWith('data:')) ? src : src.split('&sz=')[0];
-            
             bgImg.src = imgSrc;
-            
             bgImg.onload = () => {
-                // 描画キャンバスとマスク変換用キャンバスの解像度を背景画像に合わせる
                 editCanvas.width = bgImg.naturalWidth;
                 editCanvas.height = bgImg.naturalHeight;
                 maskCanvas.width = bgImg.naturalWidth;
                 maskCanvas.height = bgImg.naturalHeight;
-                
-                // 元画像(Base64)も変数に保存
                 if (src.startsWith('data:')) {
                     uploadedImageBase64 = src.split(',')[1];
                 } else {
@@ -1612,8 +1523,7 @@
                     tempCtx.drawImage(bgImg, 0, 0);
                     uploadedImageBase64 = tempCanvas.toDataURL('image/png').split(',')[1];
                 }
-
-                clearMask(); // 新しい画像をセットしたらマスクをクリア
+                clearMask();
                 container.style.display = 'block';
             };
             bgImg.onerror = () => {
@@ -1621,31 +1531,24 @@
                 uploadedImageBase64 = null;
             }
         }
-
-        // マウス/タッチの座標を取得
         function getPaintPosition(e) {
             const rect = editCanvas.getBoundingClientRect();
             let x, y;
-
             if (e.touches) {
-                e.preventDefault(); // スクロールを防ぐ
+                e.preventDefault();
                 x = e.touches[0].clientX;
                 y = e.touches[0].clientY;
             } else {
                 x = e.clientX;
                 y = e.clientY;
             }
-
             const scaleX = editCanvas.width / rect.width;
             const scaleY = editCanvas.height / rect.height;
-
             return {
                 x: (x - rect.left) * scaleX,
                 y: (y - rect.top) * scaleY
             };
         }
-        
-        // 描画開始
         function startDrawing(e) {
             isDrawing = true;
             currentPath = [];
@@ -1653,31 +1556,24 @@
             currentPath.push(pos);
             drawMask(e);
         }
-
-        // 描画中
         function drawMask(e) {
             if (!isDrawing) return;
             const pos = getPaintPosition(e);
             currentPath.push(pos);
-
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.lineWidth = brushSize * (editCanvas.width / editCanvas.clientWidth);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-
             if (currentPath.length < 2) return;
-            
             ctx.beginPath();
             ctx.moveTo(currentPath[0].x, currentPath[0].y);
-            
             for (let i = 1; i < currentPath.length - 2; i++) {
                 const c = (currentPath[i].x + currentPath[i + 1].x) / 2;
                 const d = (currentPath[i].y + currentPath[i + 1].y) / 2;
                 ctx.quadraticCurveTo(currentPath[i].x, currentPath[i].y, c, d);
             }
-            
             if(currentPath.length > 1) {
                 const i = currentPath.length - 2;
                 ctx.quadraticCurveTo(
@@ -1687,52 +1583,34 @@
                     currentPath[i+1].y
                 );
             }
-            
             ctx.stroke();
         }
-
-        // 描画終了
         function stopDrawing() {
             if (!isDrawing) return;
             isDrawing = false;
             maskHistory.push(ctx.getImageData(0, 0, editCanvas.width, editCanvas.height));
         }
-
-        // マスクを元に戻す
         function undoMask() {
             maskHistory.pop();
             clearMask(false); 
-
             if (maskHistory.length > 0) {
                 ctx.putImageData(maskHistory[maskHistory.length - 1], 0, 0);
             }
         }
-        
-        // マスクをクリア
         function clearMask(clearHistory = true) {
             ctx.clearRect(0, 0, editCanvas.width, editCanvas.height);
             if (clearHistory) {
                 maskHistory = [];
             }
         }
-
-        /**
-         * API送信用にマスクデータ(Base64)を取得
-         */
         function getMaskData() {
             if (maskHistory.length === 0 && !isDrawing) {
-                 // マスクが全く描かれていない場合 (クリア直後など)
-                 // API側でエラーになるのを防ぐため、透明なマスクを送るか、
-                 // もしくはここでnullを返して generateImage 側でバリデーションする
-                 // ここでは、APIが「白=マスク」を期待している前提で「全部黒=マスクなし」を送る
                  maskCtx.fillStyle = '#000000';
                  maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
                  return maskCanvas.toDataURL('image/png').split(',')[1];
             }
-
             const imageData = ctx.getImageData(0, 0, editCanvas.width, editCanvas.height);
             const data = imageData.data;
-            
             for (let i = 0; i < data.length; i += 4) {
                 const alpha = data[i + 3];
                 if (alpha > 0) {
@@ -1741,15 +1619,13 @@
                     data[i] = 0; data[i + 1] = 0; data[i + 2] = 0; data[i + 3] = 255;
                 }
             }
-            
             maskCtx.putImageData(imageData, 0, 0);
             return maskCanvas.toDataURL('image/png').split(',')[1];
         }
-
         // --- ▲▲▲ マスク編集関数ここまで ---
 
-        // --- ▼▼▼ [新設] PRO-DETAIL の履歴を追加する関数 ▼▼▼ ---
-        function addProStepToHistory(base64Image, finalPrompt, seed) {
+        // --- ▼▼▼ [修正] PRO-DETAIL の履歴 (SEEDなし) ▼▼▼ ---
+        function addProStepToHistory(base64Image, finalPrompt) {
             const container = document.getElementById('proStepsContainer');
             const stepCount = container.children.length + 1;
             
@@ -1759,15 +1635,13 @@
                     <div class="pro-step-info">
                         <div class="pro-step-title">Step ${stepCount}</div>
                         <div class="pro-step-prompt">${escapeHtml(finalPrompt)}</div>
-                        <div class="pro-step-meta">Seed: ${seed}</div>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', itemHtml);
-            // 新しいアイテムにスクロール
             document.getElementById(`proStep${stepCount}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-        // --- ▲▲▲ [新設ここまで] ---
+        // --- ▲▲▲ [修正ここまで] ---
 
 
         /**
@@ -1775,7 +1649,7 @@
          */
         async function generateImage() {
             const finalPrompt = document.getElementById('prompt').value.trim();
-            const mode = document.getElementById('styleMode').value; // [修正] modeはここで取得
+            const mode = document.getElementById('styleMode').value;
             const originalPrompt = currentOriginalPrompt || finalPrompt; 
             currentOriginalPrompt = null;
 
@@ -1787,16 +1661,16 @@
             const errorText = document.getElementById('errorText');
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
-            const seedDisplay = document.getElementById('seedDisplay');
+            // [削除] const seedDisplay = document.getElementById('seedDisplay');
             const retryCounter = document.getElementById('retryCounter');
 
             // Reset
             error.classList.remove('active');
-            if (mode !== 'pro-detail') { // [修正] PRO-DETAILは専用履歴以外非表示
+            if (mode !== 'pro-detail') {
                 result.classList.remove('active');
             }
             saveStatus.className = 'save-status';
-            seedDisplay.classList.remove('active');
+            // [削除] seedDisplay.classList.remove('active');
             document.getElementById('inputHint').classList.remove('visible');
 
             if (!finalPrompt) {
@@ -1805,20 +1679,13 @@
                 return;
             }
 
-            // [修正] edit / pro-detail(2回目以降) のバリデーション
             if ((mode === 'edit' || (mode === 'pro-detail' && uploadedImageBase64)) && !uploadedImageBase64) {
                 errorText.textContent = 'Please upload an image for Edit mode (or wait for Step 1).';
                 error.classList.add('active');
                 return;
             }
 
-            // [修正] SEED処理
-            const proSeedInput = document.getElementById('proSeed').value;
-            if (mode === 'pro-detail' && proSeedInput && !uploadedImageBase64) { // Step 1 のみ
-                currentSeed = parseInt(proSeedInput);
-            } else {
-                currentSeed = generateRandomSeed();
-            }
+            // [削除] SEED処理はすべて削除
 
             const maxRetries = getRetryCount();
             let success = false;
@@ -1840,7 +1707,6 @@
             loading.classList.add('active');
             closeSidebar();
 
-            // リトライループ
             while (currentRetryCount <= maxRetries && !success && !shouldStop) {
                 try {
                     if (currentRetryCount > 0) {
@@ -1848,39 +1714,33 @@
                         await sleep(2000);
                     }
 
-                    // Generate image via Cloudflare Pages Functions
                     const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        // ▼▼▼ [修正] PRO-DETAIL モードの body 送信 ▼▼▼
+                        // ▼▼▼ [修正] SEED送信を削除 ▼▼▼
                         body: JSON.stringify((function() {
                             const requestBody = {
                                 prompt: finalPrompt,
                                 originalPrompt: originalPrompt,
                                 mode: mode,
                                 action: 'generate',
-                                seed: currentSeed, // SEEDを常に送信
+                                // [削除] seed: currentSeed,
                                 personalPrefix: document.getElementById('personalPrefix').value,
                                 personalSuffix: document.getElementById('personalSuffix').value
                             };
 
                             if (mode === 'pro-detail') {
-                                // スタイルを取得
                                 const styleCheckboxes = document.querySelectorAll('#proStyleGroup input[type="checkbox"]:checked');
                                 requestBody.styles = Array.from(styleCheckboxes).map(cb => cb.value);
-                                
-                                // アスペクト比を取得
                                 requestBody.aspectRatio = document.getElementById('proAspectRatio').value;
-
-                                // 2ステップ目以降 (キャンバスに画像がある) かどうか
                                 if (uploadedImageBase64) {
-                                    requestBody.mode = 'edit'; // API側には 'edit' として振る舞わせる
+                                    requestBody.mode = 'edit';
                                     requestBody.inputImage = uploadedImageBase64;
                                     requestBody.maskImage = getMaskData();
                                 } else {
-                                    requestBody.mode = 'default'; // 最初のステップは 'default' 扱い
+                                    requestBody.mode = 'default';
                                 }
                             }
                             else if (mode === 'edit') {
@@ -1917,54 +1777,41 @@
                     // 成功した場合
                     const img = document.getElementById('generatedImage');
                     img.src = `data:image/png;base64,${data.base64Image}`;
-
-                    // --- ▼▼▼ [修正] モード別 成功時処理 ▼▼▼ ---
                     
-                    // [修正] PRO-DETAIL または EDIT モードの場合、キャンバスに自動セット
                     if (mode === 'edit' || mode === 'pro-detail') {
                         setCanvasImage(img.src);
-                        // [追加] PRO-DETAIL モードの時だけ、編集UIを強制的に表示
                         if (mode === 'pro-detail') {
                             document.getElementById('editCanvasContainer').style.display = 'block';
                             document.getElementById('editModeInfo').classList.add('active');
                         }
                     }
 
-                    // [修正] PRO-DETAIL モードの場合、結果を履歴に追加
                     if (mode === 'pro-detail') {
-                        addProStepToHistory(data.base64Image, data.finalPrompt, currentSeed);
-                        result.classList.remove('active'); // メインの結果表示は使わない
-                        
-                        // [追加] 次の編集のためにプロンプト欄をクリア
+                        addProStepToHistory(data.base64Image, data.finalPrompt); // [修正] seedなし
+                        result.classList.remove('active');
                         document.getElementById('prompt').value = '';
                         document.getElementById('prompt').focus();
-
                     } else {
-                        // 既存のモード (default, edit など) はメインの結果表示を使う
                         result.classList.add('active');
                     }
                     
-                    // [修正] Defaultモードなどで生成した画像をクリックして編集に送る
                     img.onclick = () => {
                         document.getElementById('styleMode').value = 'edit';
                         document.getElementById('styleMode').dispatchEvent(new Event('change'));
-                        
                         setCanvasImage(img.src);
                         document.getElementById('editCanvasContainer').scrollIntoView({ behavior: 'smooth' });
                     };
-                    // --- ▲▲▲ [修正ここまで] ---
 
-                    document.getElementById('seedValue').textContent = currentSeed;
-                    if (mode !== 'pro-detail') { // [修正]
-                        seedDisplay.classList.add('active');
-                    }
+                    // [削除] SEED表示は不要
+                    // document.getElementById('seedValue').textContent = currentSeed;
+                    // if (mode !== 'pro-detail') { ... }
 
                     currentOriginalPrompt = data.originalPrompt || originalPrompt;
                     currentFinalPrompt = data.finalPrompt || finalPrompt;
 
                     if (currentFinalPrompt !== currentOriginalPrompt) {
                         document.getElementById('finalPromptText').textContent = currentFinalPrompt;
-                        if (mode !== 'pro-detail') { // [修正]
+                        if (mode !== 'pro-detail') {
                             document.getElementById('promptDisplay').style.display = 'block';
                         }
                     } else {
@@ -1973,8 +1820,8 @@
 
                     incrementGenerationCount();
 
-                    // Save to Google Drive
-                    saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image, currentSeed);
+                    // [修正] SEEDなしで保存
+                    saveToGoogleDrive(currentOriginalPrompt, currentFinalPrompt, data.base64Image);
                     
                     success = true;
 
@@ -2001,13 +1848,12 @@
             retryCounter.textContent = '';
         }
 
-        // Google Driveへ保存
-        async function saveToGoogleDrive(originalPrompt, finalPrompt, base64Image, seed) {
+        // [修正] Google Driveへ保存 (SEEDなし)
+        async function saveToGoogleDrive(originalPrompt, finalPrompt, base64Image) {
             const saveStatus = document.getElementById('saveStatus');
-            const mode = document.getElementById('styleMode').value; // [追加]
+            const mode = document.getElementById('styleMode').value;
             
             try {
-                // [修正] PRO-DETAIL モードではメインのステータスを表示しない
                 if (mode !== 'pro-detail') {
                     saveStatus.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2030,8 +1876,8 @@
                         originalPrompt: originalPrompt,
                         finalPrompt: finalPrompt,
                         base64Image: base64Image,
-                        seed: seed,
                         timestamp: new Date().toISOString()
+                        // [削除] seed: seed
                     }),
                 });
 
@@ -2041,7 +1887,7 @@
                 const fullImageUrl = result.fullImageUrl;
                 
                 if (result.success && thumbnailUrl && fullImageUrl) {
-                    if (mode !== 'pro-detail') { // [修正]
+                    if (mode !== 'pro-detail') {
                         saveStatus.innerHTML = `
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -2050,14 +1896,15 @@
                         `;
                         saveStatus.className = 'save-status success';
                     }
-                    addToHistory(originalPrompt, finalPrompt, thumbnailUrl, seed, fullImageUrl);
+                    
+                    addToHistory(originalPrompt, finalPrompt, thumbnailUrl, fullImageUrl); // [修正] seedなし
 
                 } else {
                     throw new Error(result.error || 'Save failed - image URL missing');
                 }
 
             } catch (err) {
-                if (mode !== 'pro-detail') { // [修正]
+                if (mode !== 'pro-detail') {
                     saveStatus.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -2068,7 +1915,6 @@
                     `;
                     saveStatus.className = 'save-status error';
                 } else {
-                    // PRO-DETAILモードでもエラーはコンソールに出す
                     console.error("Save to GDrive failed:", err.message);
                 }
             }
@@ -2077,10 +1923,10 @@
         function closeImage() {
             const result = document.getElementById('result');
             const saveStatus = document.getElementById('saveStatus');
-            const seedDisplay = document.getElementById('seedDisplay');
+            // [削除] const seedDisplay = document.getElementById('seedDisplay');
             result.classList.remove('active');
             saveStatus.className = 'save-status';
-            seedDisplay.classList.remove('active');
+            // [削除] seedDisplay.classList.remove('active');
         }
 
         // サイドバートグル
@@ -2113,23 +1959,18 @@
 
         // イベントリスナー設定
         document.addEventListener('DOMContentLoaded', function() {
-            // ハンバーガーメニュー
             document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
             document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
 
-            // プロンプト欄が手動編集されたら、翻訳前の記憶をリセット
             document.getElementById('prompt').addEventListener('input', () => {
                 currentOriginalPrompt = null; 
             });
 
-            // Enter2回押し検出
             document.getElementById('prompt').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    
                     const currentTime = Date.now();
                     const timeDiff = currentTime - lastEnterTime;
-                    
                     if (timeDiff < 500) {
                         document.getElementById('inputHint').classList.remove('visible');
                         generateImage();
@@ -2143,7 +1984,6 @@
                 }
             });
 
-            // リトライ設定のカスタム入力表示切り替え
             document.getElementById('retryCount').addEventListener('change', function(e) {
                 const customInput = document.getElementById('customRetryCount');
                 if (e.target.value === 'custom') {
@@ -2153,20 +1993,20 @@
                 }
             });
 
-            // --- ▼▼▼ [修正] Style Mode変更時の処理 ▼▼▼
+            // [修正] Style Mode変更時の処理
             document.getElementById('styleMode').addEventListener('change', function(e) {
                 const uploadArea = document.getElementById('uploadArea');
                 const editModeInfo = document.getElementById('editModeInfo');
                 const personalModeArea = document.getElementById('personalModeArea');
                 const editCanvasContainer = document.getElementById('editCanvasContainer');
-                const proDetailArea = document.getElementById('proDetailArea'); // [追加]
+                const proDetailArea = document.getElementById('proDetailArea');
 
                 // すべて非表示にリセット
                 uploadArea.style.display = 'none';
                 editModeInfo.classList.remove('active');
                 personalModeArea.style.display = 'none';
                 editCanvasContainer.style.display = 'none';
-                proDetailArea.style.display = 'none'; // [追加]
+                proDetailArea.style.display = 'none';
 
                 if (e.target.value === 'edit') {
                     uploadArea.style.display = 'block';
@@ -2177,42 +2017,32 @@
                 } else if (e.target.value === 'personal') {
                     personalModeArea.style.display = 'block';
                 
-                } else if (e.target.value === 'pro-detail') { // [追加]
+                } else if (e.target.value === 'pro-detail') {
                     proDetailArea.style.display = 'block';
-                    editModeInfo.classList.add('active'); // PRO-DETAILも編集UIを使う
-                    
-                    // [追加] 新しいセッションを開始するため、既存の画像と履歴をクリア
+                    editModeInfo.classList.add('active');
                     uploadedImageBase64 = null;
                     clearMask();
-                    document.getElementById('proStepsContainer').innerHTML = ''; // 履歴UIをクリア
+                    document.getElementById('proStepsContainer').innerHTML = '';
                     document.getElementById('editCanvasContainer').style.display = 'none';
-                    document.getElementById('uploadArea').style.display = 'none'; // PRO-DETAILではアップロード不可
+                    document.getElementById('uploadArea').style.display = 'none';
                 }
             });
-            // --- ▲▲▲ [修正ここまで] ---
 
             // ファイルアップロード
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('imageUpload');
-            
             uploadArea.addEventListener('click', () => fileInput.click());
-            
             fileInput.addEventListener('change', handleFileUpload);
-            
-            // ドラッグ&ドロップ
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadArea.classList.add('drag-over');
             });
-            
             uploadArea.addEventListener('dragleave', () => {
                 uploadArea.classList.remove('drag-over');
             });
-            
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadArea.classList.remove('drag-over');
-                
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     handleFileUpload({ target: { files: [files[0]] } });
@@ -2220,19 +2050,15 @@
             });
 
 
-            // ペルソナ入力欄 (Prefix) をlocalStorageに自動保存
+            // LocalStorage (Personal)
             const personalPrefixInput = document.getElementById('personalPrefix');
             personalPrefixInput.addEventListener('input', () => {
                 localStorage.setItem('personalPrefix', personalPrefixInput.value);
             });
-
-            // ペルソナ入力欄 (Suffix) をlocalStorageに自動保存
             const personalSuffixInput = document.getElementById('personalSuffix');
             personalSuffixInput.addEventListener('input', () => {
                 localStorage.setItem('personalSuffix', personalSuffixInput.value);
             });
-
-            // ページ読み込み時にlocalStorageからペルソナを読み込む
             const savedPrefix = localStorage.getItem('personalPrefix');
             if (savedPrefix) {
                 personalPrefixInput.value = savedPrefix;
@@ -2250,38 +2076,30 @@
             loadGenerationCount();
         });
 
-        // --- ▼▼▼ [修正] ファイルアップロード処理 ▼▼▼ ---
+        // ファイルアップロード処理 (変更なし)
         function handleFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             if (file.size > 10 * 1024 * 1024) {
                 alert('File size must be less than 10MB');
                 return;
             }
-            
             if (!file.type.startsWith('image/')) {
                 alert('Please upload an image file');
                 return;
             }
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 const dataUrl = e.target.result;
-                
-                // [修正] アップロードしたら、強制的に 'edit' モードにする
                 const styleModeSelect = document.getElementById('styleMode');
                 if (styleModeSelect.value === 'pro-detail') {
-                    // PRO-DETAIL中にアップロードした場合、通常のEDITモードに切り替える
                     styleModeSelect.value = 'edit';
                     styleModeSelect.dispatchEvent(new Event('change'));
                 }
-                
                 setCanvasImage(dataUrl); 
             };
             reader.readAsDataURL(file);
         }
-        // --- ▲▲▲ [修正ここまで] ---
     </script>
 </body>
 </html>
