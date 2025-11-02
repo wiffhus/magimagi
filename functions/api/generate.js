@@ -1,4 +1,5 @@
 // functions/api/generate.js
+// [修正] 編集(mode: edit)のリクエストをGASに転送するルーター機能を追加
 
 /**
  * Gemini API（Flash）を呼び出してプロンプトを翻訳（最適化）する
@@ -7,7 +8,7 @@
 async function translateProPrompt(prompt, apiKey) {
     const flashApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-    // (中身は変更なし ... 省略)
+   // (中身は変更なし ... 省略)
     const translatorPrompt = `
 You are an expert AI prompt engineer specializing in advanced image generation.
 Your task is to rewrite the user's prompt based on the following rules to achieve a specific artistic, suggestive, and sensual style, while strictly avoiding explicit or policy-violating terms.
@@ -263,6 +264,7 @@ async function isEnglish(prompt, apiKey) {
         return true; 
     }
 }
+
 /**
  * Gemini API（Flash）を呼び出して、テキストを英語の画像生成プロンプトに翻訳する
  */
@@ -340,7 +342,7 @@ function getApiKeyByIndex(index, env) {
         'GEMINI_API_KEY_09',  // Index 9
         'GEMINI_API_KEY_10'   // Index 10 (合計 11 keys)
     ];
-   // インデックスが範囲内か確認 (0〜10)
+    // インデックスが範囲内か確認 (0〜10)
     const safeIndex = index >= 0 && index < keyNames.length ? index : 0;
     const keyName = keyNames[safeIndex];
     
@@ -361,7 +363,6 @@ function getApiKeyByIndex(index, env) {
  */
 export async function onRequestPost({ request, env }) {
     try {
-        // ▼▼▼ [修正] seed を削除 ▼▼▼
         const { 
             prompt,
             originalPrompt: originalPromptFromClient,
@@ -372,16 +373,13 @@ export async function onRequestPost({ request, env }) {
             personalPrefix,
             personalSuffix,
             aspectRatio,
-            styles // (Array of strings from client)
+            styles 
         } = await request.json();
-        // ▲▲▲ [修正ここまで] ▲▲▲
         
         
         let API_KEY; 
-        // [追加] 翻訳キーと編集キーを分離
         const TRANSLATE_API_KEY = env.GEMINI_API_KEY;
-        const EDIT_API_KEY = env.IMAGEN_EDIT_API_KEY;
-
+        // [削除] EDIT_API_KEY は不要。GAS_WEB_APP_URL を使う
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: 'プロンプトが必要です。' }), {
@@ -392,7 +390,7 @@ export async function onRequestPost({ request, env }) {
 
         // --- 翻訳アクション (Translateボタン) ---
         if (action === 'translate') {
-            API_KEY = TRANSLATE_API_KEY; // [修正] 翻訳専用キーを使用
+            API_KEY = TRANSLATE_API_KEY; 
             if (!API_KEY) {
                  return new Response(JSON.stringify({ error: 'メインAPIキー(GEMINI_API_KEY)が設定されていません。翻訳に必要です。' }), {
                     status: 500,
@@ -405,7 +403,7 @@ export async function onRequestPost({ request, env }) {
                 let translatedPrompt = prompt;
                 let finalPrompt = prompt;
 
-                // [修正] 'pro' と 'pro-detail' 以外は翻訳
+                // (翻訳ロジックは変更なし)
                 if (mode !== 'pro' && mode !== 'pro-detail') {
                     const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                     if (!isEng) {
@@ -413,7 +411,6 @@ export async function onRequestPost({ request, env }) {
                     }
                 }
                 
-                // [修正] 'pro-detail' の翻訳ロジックを修正
                 switch (mode) {
                     case 'edit':
                         finalPrompt = translatedPrompt;
@@ -432,15 +429,12 @@ export async function onRequestPost({ request, env }) {
                         break;
                     
                     case 'pro-detail':
-                        // PRO-DETAILはまず翻訳だけする (Pro化はしない)
                         const isEng = await isEnglish(originalPromptForTranslate, API_KEY);
                         if (!isEng) {
                             finalPrompt = await translateToEnglish(originalPromptForTranslate, API_KEY);
                         } else {
                             finalPrompt = originalPromptForTranslate;
                         }
-                        
-                        // スタイルを結合 (もしあれば)
                         if (styles && styles.length > 0) {
                             finalPrompt = `${finalPrompt}, ${styles.join(', ')}`;
                         }
@@ -489,6 +483,7 @@ export async function onRequestPost({ request, env }) {
         
         // (Personalモードの直押し処理は変更なし)
         if (mode === 'personal') {
+            // ... (処理は省略) ...
             let prefix = (personalPrefix && personalPrefix.trim() !== '') ? personalPrefix.trim() : '';
             let suffix = (personalSuffix && personalSuffix.trim() !== '') ? personalSuffix.trim() : '';
             const trimmedFinalPrompt = finalPrompt.trim();
@@ -517,15 +512,15 @@ export async function onRequestPost({ request, env }) {
         
         const originalPrompt = originalPromptFromClient || finalPrompt;
 
-        // ▼▼▼ [修正] APIキーの割り当てロジック ▼▼▼
+        // ▼▼▼ [修正] 編集(edit)か生成(generate)かで処理を振り分け ▼▼▼
         
         // [修正] 編集モード (インペインティング) の処理
         // (PRO-DETAILの2回目以降も 'edit' として扱われる)
         if (mode === 'edit') {
             
-            API_KEY = EDIT_API_KEY; // [修正] 編集専用キーを使用
-            if (!API_KEY) {
-                 return new Response(JSON.stringify({ error: '編集用APIキー(IMAGEN_EDIT_API_KEY)が設定されていません。' }), {
+            const GAS_WEB_APP_URL = env.GAS_WEB_APP_URL;
+            if (!GAS_WEB_APP_URL) {
+                 return new Response(JSON.stringify({ error: 'GAS Web App URLが設定されていません。編集機能に必要です。' }), {
                     status: 500,
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -545,64 +540,46 @@ export async function onRequestPost({ request, env }) {
             }
 
             try {
-                const inpaintApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-capability-001:predict?key=${API_KEY}`;
-                
-                const inpaintPayload = {
-                    instances: [
-                        {
-                            prompt: finalPrompt,
-                            image: {
-                                bytesBase64Encoded: inputImage
-                            },
-                            mask: {
-                                bytesBase64Encoded: maskImage
-                            }
-                        }
-                    ],
-                    // ▼▼▼ [修正] seed を削除 ▼▼▼
-                    parameters: {
-                        sampleCount: 1,
-                        temperature: 1.0,
-                        ...(aspectRatio && { aspectRatio: aspectRatio })
-                    }
-                    // ▲▲▲ [修正ここまで] ▲▲▲
-                };
-
-                const imagenResponse = await fetch(inpaintApiUrl, {
+                // [修正] GASに編集リクエストを転送(プロキシ)する
+                const gasResponse = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(inpaintPayload),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'edit', // GAS側で「編集」だと認識させる
+                        prompt: finalPrompt,
+                        inputImage: inputImage,
+                        maskImage: maskImage,
+                        aspectRatio: aspectRatio 
+                    }),
                 });
+
+                const gasResult = await gasResponse.json();
+
+                if (!gasResponse.ok || gasResult.error) {
+                    throw new Error(gasResult.error || 'GAS (Google Apps Script) 側で編集エラーが発生しました。');
+                }
                 
-                // ( ... レスポンス処理は変更なし ... )
-                const imagenResponseText = await imagenResponse.text();
-                let imagenResult;
-                try {
-                    imagenResult = JSON.parse(imagenResponseText);
-                } catch (e) {
-                    throw new Error(`Failed to parse Imagen response: ${imagenResponseText}`);
-                }
-                if (!imagenResponse.ok || imagenResult.error) {
-                    throw new Error(JSON.stringify(imagenResult.error || 'Imagen API error'));
-                }
-                const base64Image = imagenResult.predictions?.[0]?.bytesBase64Encoded;
+                // GASから返ってきたBase64画像をクライアントに返す
+                const base64Image = gasResult.base64Image;
                 if (base64Image) {
                     return new Response(JSON.stringify({ 
                         base64Image: base64Image,
                         success: true,
                         finalPrompt: finalPrompt,
                         originalPrompt: originalPrompt,
-                        mode: 'edit'
+                        mode: 'edit' // クライアント側での処理用に 'edit' を返す
                     }), {
                         headers: { 'Content-Type': 'application/json' },
                         status: 200,
                     });
                 }
-                 throw new Error('編集画像の生成に失敗しました。');
+                 throw new Error('GASからのレスポンスに画像データが含まれていませんでした。');
 
             } catch (editError) {
                  return new Response(JSON.stringify({
-                    error: '画像編集処理中にエラーが発生しました。',
+                    error: '画像編集処理(GAS転送)中にエラーが発生しました。',
                     editError: editError.message
                 }), {
                     status: 500,
@@ -615,13 +592,13 @@ export async function onRequestPost({ request, env }) {
         // [修正] 通常の画像生成 (PRO-DETAILの1回目も含む)
         if (mode !== 'edit') {
             
-            // --- [修正] 画像生成時はローテーションキーを使用 ---
+            // --- (画像生成時のローテーションキー取得ロジックは変更なし) ---
             const KV_NAMESPACE = env.KEY_STORE; 
             const KV_KEY_NAME = 'CURRENT_API_INDEX';
             const TOTAL_KEYS = 11;
             if (!KV_NAMESPACE) {
                 console.warn('KV Namespace (KEY_STORE) is not bound. Falling back to GEMINI_API_KEY.');
-                API_KEY = env.GEMINI_API_KEY; // メインキーをフォールバックとして使用
+                API_KEY = env.GEMINI_API_KEY;
             } else {
                 try {
                     const currentIndexStr = await KV_NAMESPACE.get(KV_KEY_NAME);
@@ -631,10 +608,10 @@ export async function onRequestPost({ request, env }) {
                     await KV_NAMESPACE.put(KV_KEY_NAME, nextIndex.toString());
                 } catch (kvError) {
                     console.error('KV Error during API key rotation:', kvError.message);
-                    API_KEY = env.GEMINI_API_KEY; // KVエラー時はフォールバック
+                    API_KEY = env.GEMINI_API_KEY;
                 }
             }
-            // --- [修正] ローテーションロジックここまで ---
+            // --- ローテーションロジックここまで ---
 
             if (!API_KEY) {
                 return new Response(JSON.stringify({ error: '画像生成用のAPIキーが設定されていません。' }), {
@@ -651,13 +628,11 @@ export async function onRequestPost({ request, env }) {
                         prompt: finalPrompt 
                     }
                 ],
-                // ▼▼▼ [修正] seed を削除 ▼▼▼
                 parameters: {
                     sampleCount: 1,
                     temperature: 1.8,
                     ...(aspectRatio && { aspectRatio: aspectRatio })
                 }
-                // ▲▲▲ [修正ここまで] ▲▲▲
             };
 
             const geminiResponse = await fetch(apiUrl, {
